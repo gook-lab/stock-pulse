@@ -5,4 +5,13 @@
 # trustPolicy: 업데이트하면서 provenance/서명 같은 신뢰 신호가 **약해지는**
 #   버전을 조용히 받아들이지 않는다.
 minimumReleaseAge: 10080
+
+overrides:
+  '@vitest/mocker@>=2.1.0 <4.1.11': '>=4.1.11'
+  esbuild@<=0.24.2: '>=0.25.0'
+  nanoid@<3.3.18: '>=3.3.18'
+  postcss@<=8.5.22: '>=8.5.23'
+  vite@<=6.4.2: '>=6.4.3'
+  vitest@<4.1.11: '>=4.1.11'
+
 trustPolicy: no-downgrade

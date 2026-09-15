@@ -19,7 +19,7 @@ AI 종합의견·기술적 목표가에 더해, 국내 부동산 모듈(실거�
 
 <img src="docs/screenshots/01-dashboard.png" width="600">
 
-> 백엔드 미연결 상태. 실데이터가 없는 자리는 목이 아니라 `-`로 표시됩니다 — 의도된 동작입니다.
+> 백엔드 미연결 상태입니다. 실데이터가 없는 자리는 대체 데이터로 채우지 않고 `-`로 표시합니다.
 
 ## 실행
 
@@ -92,7 +92,7 @@ FE 아키텍처의 **단일 소스는 [`docs/ARCHITECTURE-FE.md`](docs/ARCHITECT
 Requirements → Architecture → Data model → Interface → Optimization/Observability).
 품질 기준을 "빠르다" 같은 말이 아니라 **수치 SLI**로 적어 두고 그걸 지킵니다.
 
-### 불변식 5개 (절대 규칙)
+### 데이터 처리 규칙 5개
 
 1. **브라우저는 KIS에 직결하지 않습니다.** 실시간은 서버 WebSocket 게이트웨이 1개 →
    SSE 팬아웃(`/api/stream`)만 씁니다. 키·재접속·키 한도는 서버 책임입니다.
@@ -100,7 +100,7 @@ Requirements → Architecture → Data model → Interface → Optimization/Obse
    httpApi 실패 경로에서 `mockApi`를 반환하면 안 됩니다.
 3. **등락색은 주입됩니다.** `signColor(pct, mode)`만 쓰고 hex를 하드코딩하면 안 됩니다.
    `colorMode`(글로벌 초록↑빨강↓ / 한국 빨강↑파랑↓)가 전역이라, 컴포넌트가 색을 정하면 안 됩니다.
-4. **파서 계약은 골든 테스트로 잠급니다.** SSE 체결/호가 필드 인덱스가 바뀌면 픽스처부터 고칩니다.
+4. **파서 결과는 골든 테스트와 비교합니다.** SSE 체결·호가 필드 인덱스가 바뀌면 픽스처와 파서를 함께 확인합니다.
 5. **캐시는 빈 성공을 저장하면 안 됩니다.** 스로틀 순간의 `{}`가 TTL 동안 박제되면 곤란합니다.
 
 ### 신선도 목표 (SLI)
@@ -121,7 +121,7 @@ Requirements → Architecture → Data model → Interface → Optimization/Obse
 
 ## 외부 API 연동 노트
 
-이 프로젝트의 실질적 난이도는 UI가 아니라 **남의 API를 견디는 일**이었습니다.
+이 프로젝트에서는 여러 외부 API의 호출 제한과 실패 상태를 한 화면에서 다루는 데 가장 많은 검증이 필요했습니다.
 
 - **CNN · data.go.kr는 User-Agent가 없으면 차단합니다.**
 - **data.go.kr는 50콜 동시 호출 시 스로틀** — 동시성 5 + 재시도로 눌렀습니다.
@@ -162,6 +162,7 @@ Requirements → Architecture → Data model → Interface → Optimization/Obse
 | 문서 | 내용 |
 |---|---|
 | [docs/ARCHITECTURE-FE.md](docs/ARCHITECTURE-FE.md) | FE 아키텍처 단일 소스 (RADIO) |
+| [docs/DATA-STATES.md](docs/DATA-STATES.md) | 외부 데이터의 출처·신선도·실패 상태 처리 기준 |
 | [기능명세.md](기능명세.md) | 상세 요구사항 |
 | [CLAUDE.md](CLAUDE.md) | 작업 규칙 · 디자인 시스템 · 색상 컨벤션 · 데이터 연동 패턴 |
 | [handoff/README.md](handoff/README.md) | 세션 인계 노트 |
@@ -174,6 +175,12 @@ Requirements → Architecture → Data model → Interface → Optimization/Obse
 KIS 연동은 검증 전까지 **모의(mock) 계좌만** 사용해야 합니다.
 `server/data/`(개인 금융 데이터)와 `server/.env`(키)는 `.gitignore`에 있습니다 — 커밋하면 안 됩니다.
 
+## 프로젝트 회고
+
+여러 외부 API를 연결할 때 가장 어려운 부분은 데이터를 가져오는 기능보다 제한·지연·부분 실패를 일관된 화면 상태로 표현하는 일이었습니다. 값이 없는 자리를 임의의 데이터로 채우기보다 출처와 갱신 상태를 표시하는 편이 서비스의 신뢰를 지켰습니다.
+
+성능도 번들 크기만으로 판단할 수 없었습니다. 초기 로딩 비용, 데이터 신선도, API 호출 안정성을 나누어 살펴봐야 변경의 효과를 설명할 수 있었습니다. 다음 대시보드에서는 정상 응답과 함께 호출 한도, 일부 누락, 재시도 시점을 먼저 화면 상태로 정의하려 합니다.
+
 ---
 
 ## 라이선스
@@ -181,4 +188,3 @@ KIS 연동은 검증 전까지 **모의(mock) 계좌만** 사용해야 합니다
 **Source-available — 오픈소스가 아닙니다.** 코드를 읽을 수 있게 공개했을 뿐,
 사용 권한을 드린 것은 아닙니다. 다른 프로젝트에 가져다 쓰거나 재배포·상업적 이용을
 하려면 사전 서면 허락이 필요합니다. 전문은 [LICENSE](LICENSE), 한국어 안내는 [LICENSE.ko.md](LICENSE.ko.md) 참조.
-

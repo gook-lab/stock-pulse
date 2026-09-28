@@ -117,7 +117,7 @@ describe('compareSeries helpers', () => {
     it('compareSeries 미지정 시 메인 데이터만으로 계산', () => {
       const data = [100, 200, 150];
       const resultWithEmpty = calcMinMax(data, []);
-      const resultWithoutCompare = calcMinMax(data, undefined as any);
+      const resultWithoutCompare = calcMinMax(data, undefined);
       // 기존 동작과 동일해야 함
       expect(resultWithEmpty.min).toBe(resultWithoutCompare.min);
       expect(resultWithEmpty.max).toBe(resultWithoutCompare.max);

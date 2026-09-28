@@ -7,6 +7,7 @@ import {
   dragZoomFactor,
   boxesOverlap,
   dedupePois,
+  type Poi,
 } from './siteMapView';
 
 describe('clampZoom — 배율 한계', () => {
@@ -153,12 +154,12 @@ describe('boxesOverlap — 라벨 겹침 판정', () => {
 });
 
 describe('dedupePois — 여러 칸에서 온 같은 시설 합치기', () => {
-  const poi = (kind: any, name: string | null, x: number, y: number) => ({
-    kind,
-    name,
-    x,
-    y,
-  });
+  const poi = (
+    kind: Poi['kind'],
+    name: string | null,
+    x: number,
+    y: number,
+  ) => ({ kind, name, x, y });
 
   it('같은 종류·이름이 가까우면 하나로 — 인접 칸이 겹쳐 주는 경우', () => {
     const out = dedupePois([

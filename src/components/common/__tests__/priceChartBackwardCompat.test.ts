@@ -9,7 +9,7 @@ describe('PriceChart backward compatibility', () => {
     const resultWithout = calcMinMax(data, []);
 
     // compareSeries undefined
-    const resultUndefined = calcMinMax(data, undefined as any);
+    const resultUndefined = calcMinMax(data, undefined);
 
     // 동일해야 함
     expect(resultWithout.min).toBe(resultUndefined.min);

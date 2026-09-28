@@ -11,7 +11,12 @@ import {
 } from '@/components/common';
 import toast from '@/lib/toast';
 import { httpApi } from '@/data/httpApi';
-import type { AptComplexDetail, SignalKey, AreaTier } from '@/data/types';
+import type {
+  AptComplexDetail,
+  SignalKey,
+  AreaTier,
+  AptDeal,
+} from '@/data/types';
 import { fmt, scaleColor, SIGNAL_DOMAIN, WARN } from '@/lib/colors';
 import DealScatter from './DealScatter';
 import ComplexTour from './ComplexTour';
@@ -36,13 +41,14 @@ function ComplexDetailBody({
   const aptWatchlist = useStore(st => st.aptWatchlist);
   const toggleAptWatch = useStore(st => st.toggleAptWatch);
 
-  const [deals, setDeals] = useState<any[]>([]);
+  const [deals, setDeals] = useState<AptDeal[]>([]);
   const [dealsLoading, setDealsLoading] = useState(false);
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [dealsStale, setDealsStale] = useState(false);
 
   // 거래 내역 조회
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 단지 전환 시 조회를 새로 시작하며 로딩·이전 값을 초기화한다 — 채움은 비동기 응답
     setDealsLoading(true);
     setDealsError(null);
     httpApi
@@ -115,7 +121,7 @@ function ComplexDetailBody({
   })();
 
   const tierBars = Object.entries(detail.tiers)
-    .filter(([_, tierData]) => {
+    .filter(([, tierData]) => {
       const prices = dealType === 'trade' ? tierData.t : tierData.r;
       return prices[0] != null && prices[1] > 0;
     })
@@ -454,6 +460,7 @@ export default function ComplexDetail() {
     }
     const id = selectedComplexId;
     reqId.current = id;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 단지 전환 시 조회를 새로 시작하며 로딩·이전 값을 초기화한다 — 채움은 비동기 응답
     setLoading(true);
     setDetail(null);
     setSelectedArea(null);

@@ -188,6 +188,7 @@ export function useKrChart(code: string | null, period: 'D' | 'W' | 'M') {
   useEffect(() => {
     // 종목·주기 전환 시 이전 데이터 즉시 제거 — 새 조회가 KIS 게이트 큐에서 수 초 걸리는 동안
     // 이전 종목 캔들이 새 종목 이름 아래 그대로 렌더된다(실측: SK하이닉스에 삼성전자 차트·가격).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 KIS 조회·구독을 새로 시작하며 이전 종목 데이터를 즉시 비운다(위 주석의 실측 사고)
     setCandles([]);
     if (!code) return;
     let alive = true;
@@ -223,6 +224,7 @@ export function useKrChartAll(code: string | null) {
   useEffect(() => {
     // 종목 전환 시 이전 종목 일/주/월봉 즉시 제거(위 useKrChart와 같은 이유) —
     // lastClose 파생값이 이전 종목 종가로 남아 헤더 가격까지 오염시킨다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 KIS 조회·구독을 새로 시작하며 이전 종목 데이터를 즉시 비운다(위 주석의 실측 사고)
     setData({ daily: [], weekly: [], monthly: [] });
     if (!code) return;
     let alive = true;
@@ -256,6 +258,7 @@ export function useKrIntraday(code: string | null) {
   const [candles, setCandles] = useState<Candle[]>([]);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 KIS 조회·구독을 새로 시작하며 이전 종목 데이터를 즉시 비운다(위 주석의 실측 사고)
     setCandles([]); // 종목 전환 시 이전 종목 분봉 즉시 제거(useKrChart와 같은 이유)
     if (!code) return;
     let alive = true;
@@ -302,6 +305,7 @@ export function useKisState(): KisState {
 export function useKisTrade(code: string | null) {
   const [trade, setTrade] = useState<Trade | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 KIS 조회·구독을 새로 시작하며 이전 종목 데이터를 즉시 비운다(위 주석의 실측 사고)
     setTrade(null); // 종목 변경 시 이전 체결 즉시 제거(stale 방지)
     if (!code || !isKrCode(code)) return;
     return getSse().onTrade(code, setTrade);
@@ -317,6 +321,7 @@ export function useKisRealtime(code: string | null) {
   useEffect(() => {
     const c = getSse();
     const offS = c.onState(st => setConnected(st === 'connected'));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 KIS 조회·구독을 새로 시작하며 이전 종목 데이터를 즉시 비운다(위 주석의 실측 사고)
     setTrade(null);
     setOrderbook(null); // 종목 변경 시 이전 종목 체결/호가 즉시 제거
     if (!code || !isKrCode(code))

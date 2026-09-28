@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Receipt,
   Bell,
@@ -41,7 +41,12 @@ export default function FeedCard() {
   const selectStock = useStore(st => st.selectStock);
   const setTab = useStore(st => st.setTab);
 
-  const now = Date.now();
+  // "n분 전" 표기용 시계 — 렌더 중 Date.now() 대신 1분마다 갱신한다
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const feed = useMemo(
     () =>
       buildHomeFeed({
@@ -51,9 +56,7 @@ export default function FeedCard() {
         holdings: portfolio?.holdings ?? [],
         now,
       }),
-    // now 는 렌더마다 바뀌지만 피드 재계산 기준은 소스 데이터다 — 분 단위 표기는 리렌더에 맡긴다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [paperOrders, notifications, news, portfolio],
+    [paperOrders, notifications, news, portfolio, now],
   );
 
   const open = (item: HomeFeedItem) => {

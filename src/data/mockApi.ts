@@ -21,6 +21,7 @@ import type {
   ScreenQuery,
   ScreenResult,
   KindSignals,
+  PortfolioHistoryResult,
 } from './types';
 
 const spark = (up: boolean): number[] => {
@@ -1236,9 +1237,8 @@ export const mockApi: MarketApi = {
   getAptComplex: aptSeq =>
     delay(MOCK_COMPLEXES.find(c => c.aptSeq === aptSeq) ?? null),
   getComplexDeals: () => delay({ deals: [] }), // 목은 빈 deals
-  getRanking: (_kind?: unknown, _market?: unknown): Promise<RankingItem[]> =>
-    delay([], 120), // unavailable — 목 생성 금지
-  getPortfolioHistory: (): Promise<{ entries: any[] }> =>
+  getRanking: (): Promise<RankingItem[]> => delay([], 120), // unavailable — 목 생성 금지
+  getPortfolioHistory: (): Promise<PortfolioHistoryResult> =>
     delay({ entries: [] }), // 목 생성 금지
   // 홈(W2) — 순자산·자산은 목으로 꾸며내지 않는다(RADIO #2). 백엔드 없으면 전부 "-".
   getHome: () =>

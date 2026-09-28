@@ -481,7 +481,28 @@ function Donut({
 }) {
   const R = 54,
     C = 2 * Math.PI * R;
-  let acc = 0;
+  const elements = rows.reduce<{ els: React.ReactElement[]; acc: number }>(
+    (acc, r) => {
+      const len = (r.weight / 100) * C;
+      const el = (
+        <circle
+          key={r.label}
+          cx="70"
+          cy="70"
+          r={R}
+          fill="none"
+          stroke={r.color}
+          strokeWidth="18"
+          strokeDasharray={`${len} ${C - len}`}
+          strokeDashoffset={-acc.acc}
+          transform="rotate(-90 70 70)"
+        />
+      );
+      return { els: [...acc.els, el], acc: acc.acc + len };
+    },
+    { els: [], acc: 0 },
+  );
+
   return (
     <div className={s.donutWrap}>
       <svg viewBox="0 0 140 140" className={s.donut}>
@@ -493,25 +514,7 @@ function Donut({
           stroke="var(--panel-2)"
           strokeWidth="18"
         />
-        {rows.map(r => {
-          const len = (r.weight / 100) * C;
-          const el = (
-            <circle
-              key={r.label}
-              cx="70"
-              cy="70"
-              r={R}
-              fill="none"
-              stroke={r.color}
-              strokeWidth="18"
-              strokeDasharray={`${len} ${C - len}`}
-              strokeDashoffset={-acc}
-              transform="rotate(-90 70 70)"
-            />
-          );
-          acc += len;
-          return el;
-        })}
+        {elements.els}
       </svg>
       <div className={s.legend}>
         {rows.map(r => (

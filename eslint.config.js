@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'server/cache', 'node_modules']),
+  // handoff/ 는 초기 핸드오프 참고 스냅샷 — 빌드·임포트 대상이 아니라 린트하지 않는다
+  globalIgnores(['dist', 'server/cache', 'node_modules', 'handoff']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

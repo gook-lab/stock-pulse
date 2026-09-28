@@ -70,17 +70,22 @@ export default function OrderTicket({
 
   // 훅은 전부 조기 return 이전에 — 조건부 훅은 포트폴리오 로드 전→후 전환에서 앱을 크래시시킨다(Rules of Hooks).
   // 종목이 바뀌면 비우고, 실가가 도착하면 채운다(tick마다 덮으면 사용자 입력이 날아간다).
-  useEffect(() => {
+  // (effect 대신 렌더 중에 이전 값과 비교해 조정한다 — React 권장 패턴)
+  // 기존 effect 와 같게: 마운트에도 한 번 비우고(prevCode=null), 실가 채움은 마운트 이후 변화에만 반응한다.
+  const [prevCode, setPrevCode] = useState<string | null>(null);
+  const [prevRefPrice, setPrevRefPrice] = useState(refPrice);
+  let nextLimit = limitPrice;
+  if (code !== prevCode) {
+    setPrevCode(code);
+    nextLimit = 0;
     setLimitPrice(0);
     setQty(1);
     setPriceTouched(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
-
-  useEffect(() => {
-    if (limitPrice <= 0 && refPrice > 0) setLimitPrice(snapToTick(refPrice));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refPrice]);
+  }
+  if (refPrice !== prevRefPrice) {
+    setPrevRefPrice(refPrice);
+    if (nextLimit <= 0 && refPrice > 0) setLimitPrice(snapToTick(refPrice));
+  }
 
   /** 화면·검증이 쓰는 지정가 — 손대기 전이면 실호가 기준가를 즉시 파생(상태 채움을 기다리지 않는다). */
   const effectiveLimit =
@@ -90,14 +95,15 @@ export default function OrderTicket({
         ? snapToTick(refPrice)
         : limitPrice;
 
-  // 호가 클릭 → 지정가 모드 전환 + 채움.
-  useEffect(() => {
+  // 호가 클릭 → 지정가 모드 전환 + 채움. seq 가 바뀔 때만(같은 가격 재클릭도 seq 는 오른다).
+  const [prevPickSeq, setPrevPickSeq] = useState<number | undefined>(undefined);
+  if (picked?.seq !== prevPickSeq) {
+    setPrevPickSeq(picked?.seq);
     if (picked && picked.price > 0) {
       setType('limit');
       setLimitPrice(snapToTick(picked.price));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [picked?.seq]);
+  }
 
   // 주문 가격 — 조기 return 이전에 계산한다(주문가능금액 조회가 이 값에 의존한다).
   const orderPrice =
@@ -233,7 +239,9 @@ export default function OrderTicket({
 
       // 접수된 주문만 이력에 남긴다 — 주문번호가 계좌에 들어갔다는 증거.
       // 금액 계산에는 쓰지 않는다(잔고는 KIS 재조회로 이미 갱신됨).
+      // 아래 Date.now() 두 곳은 주문 확인 핸들러(await 이후) 안이다 — 렌더 중 호출이 아니다
       placePaperOrder({
+        // eslint-disable-next-line react-hooks/purity -- 제출 핸들러 안의 주문 id(주문번호 없을 때 대체)
         id: r.orderNo || `${Date.now()}`,
         code,
         name,
@@ -243,6 +251,7 @@ export default function OrderTicket({
         price: orderPrice,
         qty,
         fee: totalFee,
+        // eslint-disable-next-line react-hooks/purity -- 제출 핸들러 안의 접수 시각
         at: Date.now(),
         ...(r.orderNo && { orderNo: r.orderNo }),
       } satisfies PaperOrder);

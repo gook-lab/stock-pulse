@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { monthValue, rollingMedian } from './DealScatter';
+import { monthValue, rollingMedian } from './DealScatter.helpers';
 
 describe('monthValue — 거래 시점 펼치기', () => {
   it('월이 1 늘면 값도 1 늘어난다 — 3개월 창을 뺄셈으로 잴 수 있어야 한다', () => {

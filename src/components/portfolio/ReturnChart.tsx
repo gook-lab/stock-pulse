@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import PriceChart, { type Period } from '@/components/common/PriceChart';
+import PriceChart from '@/components/common/PriceChart';
 import {
   CardSkeleton,
   EmptyState,
@@ -10,6 +10,7 @@ import { calculateReturns, calculateExcessReturn } from '@/lib/returns';
 import { signColor, fmt } from '@/lib/colors';
 import { useStore } from '@/store/useStore';
 import type { CompareSeries } from '@/components/common/PriceChart.helpers';
+import type { Period } from '@/components/common/PriceChart.constants';
 import type { PortfolioHistoryEntry } from '@/data/types';
 
 const PERIOD_OPTIONS = [

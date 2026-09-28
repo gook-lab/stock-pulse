@@ -3,11 +3,15 @@ import { monthValue, rollingMedian } from './DealScatter';
 
 describe('monthValue — 거래 시점 펼치기', () => {
   it('월이 1 늘면 값도 1 늘어난다 — 3개월 창을 뺄셈으로 잴 수 있어야 한다', () => {
-    expect(monthValue('202603', null) - monthValue('202602', null)).toBeCloseTo(1);
+    expect(monthValue('202603', null) - monthValue('202602', null)).toBeCloseTo(
+      1,
+    );
   });
 
   it('연말·연초를 건너도 연속이다', () => {
-    expect(monthValue('202601', null) - monthValue('202512', null)).toBeCloseTo(1);
+    expect(monthValue('202601', null) - monthValue('202512', null)).toBeCloseTo(
+      1,
+    );
   });
 
   it('같은 달이면 일자 순으로 정렬된다', () => {
@@ -27,10 +31,15 @@ describe('rollingMedian — 3개월 이동 중앙값', () => {
   });
 
   it('3개월 안의 값만 본다 — 오래된 거래는 창에서 빠진다', () => {
-    const pts = [p('202601', 100), p('202602', 200), p('202603', 300), p('202606', 900)];
+    const pts = [
+      p('202601', 100),
+      p('202602', 200),
+      p('202603', 300),
+      p('202606', 900),
+    ];
     const med = rollingMedian(pts);
-    expect(med[2]).toBe(200);   // 1·2·3월 중앙값
-    expect(med[3]).toBe(900);   // 6월은 3개월 창에 혼자
+    expect(med[2]).toBe(200); // 1·2·3월 중앙값
+    expect(med[3]).toBe(900); // 6월은 3개월 창에 혼자
   });
 
   it('건수 기준 창이 아니다 — 같은 달에 몰린 거래를 모두 포함한다', () => {
@@ -55,8 +64,8 @@ describe('rollingMedian — 3개월 이동 중앙값', () => {
 
   it('원본 순서를 훼손하지 않는다 — 정렬이 in-place 로 새지 않아야 한다', () => {
     const pts = [p('202601', 300), p('202602', 100), p('202603', 200)];
-    const before = pts.map((x) => x.y);
+    const before = pts.map(x => x.y);
     rollingMedian(pts);
-    expect(pts.map((x) => x.y)).toEqual(before);
+    expect(pts.map(x => x.y)).toEqual(before);
   });
 });

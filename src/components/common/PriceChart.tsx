@@ -25,7 +25,12 @@ import { brandWithAlpha, colors } from '../../lib/colors';
 export type Period = '1일' | '1주' | '1개월' | '3개월' | '1년' | '5년';
 export const PERIODS: Period[] = ['1일', '1주', '1개월', '3개월', '1년', '5년'];
 
-export interface Candle { o: number; h: number; l: number; c: number; }
+export interface Candle {
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+}
 
 interface Props {
   name: string;
@@ -75,11 +80,25 @@ const VALUE_PAD = 0.08;
 const MAX_ZOOM = 14;
 
 export default function PriceChart({
-  name, code, cur = '₩', dec = 0,
-  series, volumes, candles, labels, compareSeries,
-  mode = 'korea', defaultPeriod = '1개월', height = 250,
-  dayChange, dayChangePct, baseValue, singlePointNote, provisionalFrom,
-  liveBadge = '실시간', liveBadgeTone = 'live',
+  name,
+  code,
+  cur = '₩',
+  dec = 0,
+  series,
+  volumes,
+  candles,
+  labels,
+  compareSeries,
+  mode = 'korea',
+  defaultPeriod = '1개월',
+  height = 250,
+  dayChange,
+  dayChangePct,
+  baseValue,
+  singlePointNote,
+  provisionalFrom,
+  liveBadge = '실시간',
+  liveBadgeTone = 'live',
 }: Props) {
   // 등락색은 colors.ts 가 단일 소스다 — 여기서 다시 정의하면 팔레트가 두 곳으로 갈라진다.
   const { up: UP, down: DOWN } = colors(mode);
@@ -97,43 +116,59 @@ export default function PriceChart({
   const pinchDist = useRef(0);
   const panX = useRef<number | null>(null);
 
-  const full = useMemo(() => (series[period] ?? []) as (number | null)[], [series, period]);
+  const full = useMemo(
+    () => (series[period] ?? []) as (number | null)[],
+    [series, period],
+  );
   const N = full.length;
   const cnt = Math.max(MIN_POINTS, Math.round(N / zoom));
-  const clampStart = useCallback((v: number) => Math.max(0, Math.min(N - cnt, v)), [N, cnt]);
+  const clampStart = useCallback(
+    (v: number) => Math.max(0, Math.min(N - cnt, v)),
+    [N, cnt],
+  );
   const s0 = clampStart(Math.round(start));
 
   // 기간 변경 시 초기화
-  useEffect(() => { setIdx(null); setZoom(1); setStart(0); }, [period]);
+  useEffect(() => {
+    setIdx(null);
+    setZoom(1);
+    setStart(0);
+  }, [period]);
 
   // 현재 period에 데이터가 없으면(종목 전환으로 기간 세트가 바뀐 경우) 가용 기간으로 보정.
   useEffect(() => {
     if (!series[period]?.length) {
-      const a = PERIODS.find((p) => series[p]?.length);
+      const a = PERIODS.find(p => series[p]?.length);
       if (a && a !== period) setPeriod(a);
     }
   }, [series, period]);
 
   // 폭 측정
   useEffect(() => {
-    const el = wrapRef.current; if (!el) return;
+    const el = wrapRef.current;
+    if (!el) return;
     const set = () => setW(Math.max(320, el.clientWidth));
     set();
-    const ro = new ResizeObserver(set); ro.observe(el);
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const applyZoom = useCallback((next: number, anchorT = 0.5) => {
-    const z = Math.max(1, Math.min(MAX_ZOOM, next));
-    const nextCnt = Math.max(MIN_POINTS, Math.round(N / z));
-    const anchor = s0 + anchorT * cnt;
-    setZoom(z);
-    setStart(Math.max(0, Math.min(N - nextCnt, anchor - anchorT * nextCnt)));
-  }, [N, cnt, s0]);
+  const applyZoom = useCallback(
+    (next: number, anchorT = 0.5) => {
+      const z = Math.max(1, Math.min(MAX_ZOOM, next));
+      const nextCnt = Math.max(MIN_POINTS, Math.round(N / z));
+      const anchor = s0 + anchorT * cnt;
+      setZoom(z);
+      setStart(Math.max(0, Math.min(N - nextCnt, anchor - anchorT * nextCnt)));
+    },
+    [N, cnt, s0],
+  );
 
   // 휠 줌 (passive:false 필요 → 네이티브 리스너)
   useEffect(() => {
-    const el = wrapRef.current; if (!el) return;
+    const el = wrapRef.current;
+    if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const b = el.getBoundingClientRect();
@@ -163,7 +198,8 @@ export default function PriceChart({
   const lo = flat ? mn - Math.max(1, Math.abs(mn) * 0.05) : mn - roomy;
   const hi = flat ? mx + Math.max(1, Math.abs(mx) * 0.05) : mx + roomy;
   const span = hi - lo || 1;
-  const X = (i: number) => pad.l + ((w - pad.l - pad.r) * i) / Math.max(1, n - 1);
+  const X = (i: number) =>
+    pad.l + ((w - pad.l - pad.r) * i) / Math.max(1, n - 1);
   const Y = (v: number | null) => {
     if (v == null) return pad.t;
     return pad.t + (height - pad.t - pad.b) * (1 - (v - lo) / span);
@@ -172,11 +208,13 @@ export default function PriceChart({
   // 기준가: 호출자가 준 기간 기준가(주식 1일 = 전일 종가)가 있으면 그것을, 없으면 보이는 구간 첫 값.
   // 구간 기준으로만 계산하면 확대할 때 기준이 함께 움직여 1일 등락이 전일 대비가 아니게 된다.
   const fixedBase = baseValue?.[period];
-  const base = fixedBase && fixedBase > 0 ? fixedBase : (data.find((v) => v != null) ?? 0);
+  const base =
+    fixedBase && fixedBase > 0 ? fixedBase : (data.find(v => v != null) ?? 0);
   // 마지막 **유효값**. 부동산 월별 실거래처럼 최근 달이 null 이면 0 으로 읽혀
   // 헤더가 "0 ▼ -100%" 가 된다(주식은 마지막이 늘 채워져 있어 드러나지 않던 경로).
   const lastValid = (() => {
-    for (let i = n - 1; i >= 0; i--) if (data[i] != null) return data[i] as number;
+    for (let i = n - 1; i >= 0; i--)
+      if (data[i] != null) return data[i] as number;
     return 0;
   })();
   // idx가 줌/스크롤로 현재 범위를 벗어나도 안전하게(undefined 방지).
@@ -193,15 +231,18 @@ export default function PriceChart({
   const headColor = headChg >= 0 ? UP : DOWN;
 
   const pick = (clientX: number) => {
-    const el = wrapRef.current; if (!el) return;
+    const el = wrapRef.current;
+    if (!el) return;
     const b = el.getBoundingClientRect();
     const t = (clientX - b.left - pad.l) / Math.max(1, b.width - pad.l - pad.r);
     setIdx(Math.max(0, Math.min(n - 1, Math.round(t * (n - 1)))));
   };
   const doPan = (clientX: number) => {
-    const el = wrapRef.current; if (!el || panX.current == null) return;
-    const dx = clientX - panX.current; panX.current = clientX;
-    setStart((s) => clampStart(s - (dx * cnt) / Math.max(1, el.clientWidth)));
+    const el = wrapRef.current;
+    if (!el || panX.current == null) return;
+    const dx = clientX - panX.current;
+    panX.current = clientX;
+    setStart(s => clampStart(s - (dx * cnt) / Math.max(1, el.clientWidth)));
   };
   const doPinch = () => {
     if (ptrs.current.size < 2) return;
@@ -219,15 +260,26 @@ export default function PriceChart({
   const onPointerDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (ptrs.current.size === 2) { pinchDist.current = 0; doPinch(); return; }
-    if (e.pointerType === 'mouse') { panX.current = e.clientX; setIdx(null); }
-    else pick(e.clientX);
+    if (ptrs.current.size === 2) {
+      pinchDist.current = 0;
+      doPinch();
+      return;
+    }
+    if (e.pointerType === 'mouse') {
+      panX.current = e.clientX;
+      setIdx(null);
+    } else pick(e.clientX);
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (ptrs.current.has(e.pointerId)) ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (ptrs.current.size >= 2) { doPinch(); return; }
-    if (e.pointerType === 'mouse') { panX.current != null ? doPan(e.clientX) : pick(e.clientX); }
-    else if (ptrs.current.size === 1) pick(e.clientX);
+    if (ptrs.current.has(e.pointerId))
+      ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.current.size >= 2) {
+      doPinch();
+      return;
+    }
+    if (e.pointerType === 'mouse') {
+      panX.current != null ? doPan(e.clientX) : pick(e.clientX);
+    } else if (ptrs.current.size === 1) pick(e.clientX);
   };
   const endPointer = (e: React.PointerEvent) => {
     ptrs.current.delete(e.pointerId);
@@ -253,7 +305,8 @@ export default function PriceChart({
 
   const line = pathOf(0, confirmedEnd);
   // 미확정 회색 점선 — 마지막 확정점에서 이어 그려야 선이 끊겨 보이지 않는다
-  const provisionalLine = confirmedEnd < n ? pathOf(Math.max(0, confirmedEnd - 1), n) : '';
+  const provisionalLine =
+    confirmedEnd < n ? pathOf(Math.max(0, confirmedEnd - 1), n) : '';
 
   /* 빈 달을 건너뛰는 연결선.
      예전에는 밀도(유효값 70%)로 켜고 껐는데, 밀도가 높아도 구멍은 생긴다
@@ -265,9 +318,12 @@ export default function PriceChart({
   const bridge = (() => {
     const parts: string[] = [];
     for (let k = 1; k < observed.length; k++) {
-      const a = observed[k - 1], b = observed[k];
-      if (b === a + 1) continue;   // 이어진 달은 실선이 이미 그린다
-      parts.push(`M ${X(a).toFixed(1)} ${Y(data[a]).toFixed(1)} L ${X(b).toFixed(1)} ${Y(data[b]).toFixed(1)}`);
+      const a = observed[k - 1],
+        b = observed[k];
+      if (b === a + 1) continue; // 이어진 달은 실선이 이미 그린다
+      parts.push(
+        `M ${X(a).toFixed(1)} ${Y(data[a]).toFixed(1)} L ${X(b).toFixed(1)} ${Y(data[b]).toFixed(1)}`,
+      );
     }
     return parts.join(' ');
   })();
@@ -277,8 +333,10 @@ export default function PriceChart({
      끊긴 구간을 가로지르는 삼각형이 생긴다. 관측점만 이어 한 면으로 닫으면 둘 다 피한다. */
   const area = (() => {
     if (observed.length < 2) return '';
-    const pts = observed.map((i) => ({ x: X(i), y: Y(data[i]) }));
-    const d = pts.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    const pts = observed.map(i => ({ x: X(i), y: Y(data[i]) }));
+    const d = pts
+      .map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+      .join(' ');
     return `${d} L ${pts[pts.length - 1].x.toFixed(1)} ${height} L ${pts[0].x.toFixed(1)} ${height} Z`;
   })();
 
@@ -286,12 +344,23 @@ export default function PriceChart({
   // 홀로 떨어진 한 달(양옆이 모두 빈 달)은 선으로 그릴 수조차 없다.
   const showDots = n <= 40;
   const dots = showDots
-    ? data.map((v, i) => (v == null ? null : { x: X(i), y: Y(v), provisional: pvFrom != null && i >= pvFrom }))
-        .filter((d): d is { x: number; y: number; provisional: boolean } => d != null)
+    ? data
+        .map((v, i) =>
+          v == null
+            ? null
+            : { x: X(i), y: Y(v), provisional: pvFrom != null && i >= pvFrom },
+        )
+        .filter(
+          (d): d is { x: number; y: number; provisional: boolean } => d != null,
+        )
     : [];
 
   // compareSeries 경로 생성 (메인 시리즈와 동일한 스케일 사용)
-  const comparePathOf = (cmpData: (number | null)[], from: number = 0, to: number = n): string => {
+  const comparePathOf = (
+    cmpData: (number | null)[],
+    from: number = 0,
+    to: number = n,
+  ): string => {
     const parts: string[] = [];
     for (let i = Math.max(0, from); i < Math.min(to, n); i++) {
       const v = cmpData[i];
@@ -301,7 +370,7 @@ export default function PriceChart({
     }
     return parts.join(' ');
   };
-  const comparePaths = cmpSeries.map((cs) => ({
+  const comparePaths = cmpSeries.map(cs => ({
     ...cs,
     path: comparePathOf(cs.data),
   }));
@@ -309,10 +378,13 @@ export default function PriceChart({
   const gid = `pcg-${code}-${mode}`;
 
   // 거래량 (null 안전 처리)
-  const vols = ((volumes?.[period] ?? []) as (number | null)[]).slice(s0, s0 + cnt);
+  const vols = ((volumes?.[period] ?? []) as (number | null)[]).slice(
+    s0,
+    s0 + cnt,
+  );
   // 0 은 "거래 없음"이다. null 만 걸러내면 빈 달마다 최소높이(1.5px) 막대가 서서
   // 거래가 있었던 것처럼 보인다(부동산 월별 실거래에서 그대로 드러났다).
-  const validVols = vols.filter((v) => v != null && v > 0) as number[];
+  const validVols = vols.filter(v => v != null && v > 0) as number[];
   const vmax = Math.max(1, ...validVols);
   const VH = 58;
   const bw = Math.max(1.4, ((w - pad.l - pad.r) / Math.max(1, n)) * 0.62);
@@ -324,7 +396,8 @@ export default function PriceChart({
   // 미니맵 — null 은 min/max 에서 빼고, 경로에서도 건너뛴다
   const BH = 36;
   const fullValid = full.filter((v): v is number => v != null);
-  const fmn = fullValid.length ? Math.min(...fullValid) : 0, fmx = fullValid.length ? Math.max(...fullValid) : 1;
+  const fmn = fullValid.length ? Math.min(...fullValid) : 0,
+    fmx = fullValid.length ? Math.max(...fullValid) : 1;
   const fsp = fmx - fmn || 1;
   const BX = (i: number) => 6 + ((w - 12) * i) / Math.max(1, N - 1);
   const BY = (v: number) => 5 + (BH - 10) * (1 - (v - fmn) / fsp);
@@ -334,13 +407,17 @@ export default function PriceChart({
     for (let i = 0; i < N; i += stepI) {
       const v = full[i];
       if (v == null) continue;
-      parts.push(`${parts.length && full[i - stepI] != null ? 'L' : 'M'} ${BX(i).toFixed(1)} ${BY(v).toFixed(1)}`);
+      parts.push(
+        `${parts.length && full[i - stepI] != null ? 'L' : 'M'} ${BX(i).toFixed(1)} ${BY(v).toFixed(1)}`,
+      );
     }
     return parts.join(' ');
   })();
   const brushJump = (e: React.PointerEvent<SVGSVGElement>) => {
     const b = e.currentTarget.getBoundingClientRect();
-    setStart(clampStart(((e.clientX - b.left) / Math.max(1, b.width)) * N - cnt / 2));
+    setStart(
+      clampStart(((e.clientX - b.left) / Math.max(1, b.width)) * N - cnt / 2),
+    );
   };
 
   // 구간 고·저 마커. 그려진 것과 같은 소스를 쓴다(캔들 모드면 꼬리 고/저, 라인 모드면 종가).
@@ -348,12 +425,21 @@ export default function PriceChart({
   const hiLo = (() => {
     if (n === 0) return null;
     const useCandle = kind === 'candle' && cds.length > 0;
-    let hiI = -1, loI = -1, hiV = -Infinity, loV = Infinity;
+    let hiI = -1,
+      loI = -1,
+      hiV = -Infinity,
+      loV = Infinity;
     for (let i = 0; i < n; i++) {
       const h = useCandle ? cds[i]?.h : data[i];
       const l = useCandle ? cds[i]?.l : data[i];
-      if (h != null && Number.isFinite(h) && h > hiV) { hiV = h; hiI = i; }
-      if (l != null && Number.isFinite(l) && l < loV) { loV = l; loI = i; }
+      if (h != null && Number.isFinite(h) && h > hiV) {
+        hiV = h;
+        hiI = i;
+      }
+      if (l != null && Number.isFinite(l) && l < loV) {
+        loV = l;
+        loI = i;
+      }
     }
     if (hiI < 0 || loI < 0 || hiV === loV) return null; // 평탄 구간이면 표시할 게 없다
     return { hiI, hiV, loI, loV };
@@ -363,19 +449,30 @@ export default function PriceChart({
   const badgeWarn = idx == null && liveBadgeTone === 'warn';
 
   const label = (i: number) => labels?.[period]?.[i] ?? String(i + 1);
-  const money = (v: number) => cur + (v ?? 0).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-  const tickIdx = [0, Math.round((n - 1) / 3), Math.round(((n - 1) * 2) / 3), n - 1];
+  const money = (v: number) =>
+    cur +
+    (v ?? 0).toLocaleString('en-US', {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec,
+    });
+  const tickIdx = [
+    0,
+    Math.round((n - 1) / 3),
+    Math.round(((n - 1) * 2) / 3),
+    n - 1,
+  ];
 
   /* y축 — 값을 읽을 눈금이 아예 없었다. 호버해야 숫자가 나오는 차트는 절반만 완성된 것이다.
      축 공간을 따로 떼지 않고(다른 화면의 레이아웃을 건드리지 않게) 눈금선 위 오른쪽에 값을 얹는다.
      base 선과 겹치는 눈금은 건너뛴다 — 같은 자리에 선이 두 개 겹치면 지저분하다. */
   const yTicks = (() => {
-    if (n === 0 || !Number.isFinite(mn) || !Number.isFinite(mx) || flat) return [];
+    if (n === 0 || !Number.isFinite(mn) || !Number.isFinite(mx) || flat)
+      return [];
     const baseY = base != null ? Y(base) : null;
     // 0%·100% 는 최고·최저 마커가 이미 값을 말한다 — 같은 숫자를 두 번 쓰지 않는다.
     return [0.25, 0.5, 0.75]
-      .map((t) => ({ v: mn + (mx - mn) * t, y: Y(mn + (mx - mn) * t) }))
-      .filter((tk) => baseY == null || Math.abs(tk.y - baseY) > 9);
+      .map(t => ({ v: mn + (mx - mn) * t, y: Y(mn + (mx - mn) * t) }))
+      .filter(tk => baseY == null || Math.abs(tk.y - baseY) > 9);
   })();
 
   /* 거래량 막대의 방향색 — 직전 **유효** 달과 비교한다.
@@ -400,36 +497,67 @@ export default function PriceChart({
           <div className="mb-[9px] flex items-center gap-2.5">
             <span className="text-[15px] font-bold text-fg">{name}</span>
             <span className="font-mono text-xs text-mut">{code}</span>
-            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-              badgeWarn ? ''
-                : idx == null
-                  ? 'border-[rgba(22,199,132,.3)] bg-[rgba(22,199,132,.14)] text-[var(--chart-live)]'
-                  : 'border-[rgba(124,108,255,.3)] bg-[var(--brand-16)] text-[var(--chart-scrub)]'}`}
-              style={badgeWarn ? {
-                borderColor: 'color-mix(in srgb, var(--warn) 32%, transparent)',
-                background: 'color-mix(in srgb, var(--warn) 14%, transparent)',
-                color: 'var(--warn)',
-              } : undefined}>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                badgeWarn
+                  ? ''
+                  : idx == null
+                    ? 'border-[rgba(22,199,132,.3)] bg-[rgba(22,199,132,.14)] text-[var(--chart-live)]'
+                    : 'border-[rgba(124,108,255,.3)] bg-[var(--brand-16)] text-[var(--chart-scrub)]'
+              }`}
+              style={
+                badgeWarn
+                  ? {
+                      borderColor:
+                        'color-mix(in srgb, var(--warn) 32%, transparent)',
+                      background:
+                        'color-mix(in srgb, var(--warn) 14%, transparent)',
+                      color: 'var(--warn)',
+                    }
+                  : undefined
+              }
+            >
               {idx == null ? liveBadge : '과거 시점'}
             </span>
           </div>
           <div className="flex items-end gap-3">
-            <span className="font-mono text-[34px] font-extrabold leading-[.92] tracking-tight text-fg">{money(cur$)}</span>
-            <span className="mb-[3px] font-mono text-sm font-bold" style={{ color: headColor }}>
+            <span className="font-mono text-[34px] font-extrabold leading-[.92] tracking-tight text-fg">
+              {money(cur$)}
+            </span>
+            <span
+              className="mb-[3px] font-mono text-sm font-bold"
+              style={{ color: headColor }}
+            >
               {/* 소수 종목(dec>0)은 반올림하면 $5.96 이 "6"이 된다 — 표시 자릿수를 통화에 맞춘다. */}
-              {headChg >= 0 ? '▲' : '▼'} {Math.abs(headChg).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })} ({headPct >= 0 ? '+' : ''}{headPct.toFixed(2)}%)
+              {headChg >= 0 ? '▲' : '▼'}{' '}
+              {Math.abs(headChg).toLocaleString('en-US', {
+                minimumFractionDigits: dec,
+                maximumFractionDigits: dec,
+              })}{' '}
+              ({headPct >= 0 ? '+' : ''}
+              {headPct.toFixed(2)}%)
             </span>
           </div>
           <div className="mt-[7px] text-[11.5px] text-mut">
-            {scrubbing ? `${label(s0 + idx)} 시점` : showDay ? '전일 대비' : `${period} 기준`}
+            {scrubbing
+              ? `${label(s0 + idx)} 시점`
+              : showDay
+                ? '전일 대비'
+                : `${period} 기준`}
           </div>
         </div>
         {hasCandle && (
           <div className="flex gap-[3px] rounded-[10px] border border-line bg-row p-[3px]">
-            {(['line', 'candle'] as const).map((k) => (
-              <button key={k} onClick={() => setKind(k)}
+            {(['line', 'candle'] as const).map(k => (
+              <button
+                key={k}
+                onClick={() => setKind(k)}
                 className={`rounded-[7px] px-[11px] py-[5px] text-xs font-semibold transition-colors ${
-                  kind === k ? 'bg-[var(--brand-18)] text-fg' : 'text-sub hover:text-fg'}`}>
+                  kind === k
+                    ? 'bg-[var(--brand-18)] text-fg'
+                    : 'text-sub hover:text-fg'
+                }`}
+              >
                 {k === 'line' ? '라인' : '캔들'}
               </button>
             ))}
@@ -438,13 +566,25 @@ export default function PriceChart({
       </div>
 
       {/* 차트 + 거래량 (같은 포인터 영역) */}
-      <div ref={wrapRef} className="relative w-full cursor-crosshair select-none"
+      <div
+        ref={wrapRef}
+        className="relative w-full cursor-crosshair select-none"
         style={{ touchAction: 'pan-y' }}
-        onPointerDown={onPointerDown} onPointerMove={onPointerMove}
-        onPointerUp={endPointer} onPointerCancel={endPointer}
-        onPointerLeave={(e) => { endPointer(e); setIdx(null); }}>
-
-        <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} className="block overflow-visible">
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+        onPointerLeave={e => {
+          endPointer(e);
+          setIdx(null);
+        }}
+      >
+        <svg
+          width="100%"
+          height={height}
+          viewBox={`0 0 ${w} ${height}`}
+          className="block overflow-visible"
+        >
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor={color} stopOpacity={0.26} />
@@ -453,42 +593,133 @@ export default function PriceChart({
           </defs>
           {yTicks.map((tk, k) => (
             <g key={`y${k}`}>
-              <line x1={pad.l} y1={tk.y} x2={w - pad.r} y2={tk.y} stroke='var(--chart-grid)' strokeWidth={1} />
-              <text x={w - pad.r} y={tk.y - 3} textAnchor="end" className="font-mono" fontSize={9.5} fill="var(--text-mut)">
+              <line
+                x1={pad.l}
+                y1={tk.y}
+                x2={w - pad.r}
+                y2={tk.y}
+                stroke="var(--chart-grid)"
+                strokeWidth={1}
+              />
+              <text
+                x={w - pad.r}
+                y={tk.y - 3}
+                textAnchor="end"
+                className="font-mono"
+                fontSize={9.5}
+                fill="var(--text-mut)"
+              >
                 {money(Math.round(tk.v))}
               </text>
             </g>
           ))}
-          {n > 0 && base != null && <line x1={pad.l} y1={Y(base)} x2={w - pad.r} y2={Y(base)} stroke='var(--chart-base)' strokeWidth={1} strokeDasharray="4 4" />}
+          {n > 0 && base != null && (
+            <line
+              x1={pad.l}
+              y1={Y(base)}
+              x2={w - pad.r}
+              y2={Y(base)}
+              stroke="var(--chart-base)"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+            />
+          )}
           {n === 0 ? null : kind === 'line' || !cds.length ? (
             <>
               {area && <path d={area} fill={`url(#${gid})`} />}
-              {bridge && <path d={bridge} fill="none" stroke={color} strokeWidth={1.5}
-                strokeDasharray="2 4" opacity={0.38} strokeLinecap="round" />}
-              {line && <path d={line} fill="none" stroke={color} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />}
-              {provisionalLine && <path d={provisionalLine} fill="none" stroke='var(--chart-muted)' strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" strokeDasharray="4 4" />}
+              {bridge && (
+                <path
+                  d={bridge}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={1.5}
+                  strokeDasharray="2 4"
+                  opacity={0.38}
+                  strokeLinecap="round"
+                />
+              )}
+              {line && (
+                <path
+                  d={line}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={2.2}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+              {provisionalLine && (
+                <path
+                  d={provisionalLine}
+                  fill="none"
+                  stroke="var(--chart-muted)"
+                  strokeWidth={2.2}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  strokeDasharray="4 4"
+                />
+              )}
               {/* 값이 있는 달을 점으로 — 빈 달이 많으면 선만으로는 깨진 그래프처럼 읽히고,
                   양옆이 모두 빈 한 달은 선으로 그릴 수조차 없다. */}
               {dots.map((d, k) => (
-                <circle key={k} cx={d.x} cy={d.y} r={2.6}
+                <circle
+                  key={k}
+                  cx={d.x}
+                  cy={d.y}
+                  r={2.6}
                   fill={d.provisional ? 'var(--chart-muted)' : color}
-                  stroke="var(--bg)" strokeWidth={1.1} />
+                  stroke="var(--bg)"
+                  strokeWidth={1.1}
+                />
               ))}
-              {atEnd && data[n - 1] != null && <circle cx={X(n - 1)} cy={Y(data[n - 1])} r={3.6} fill={color} />}
-              {comparePaths.map((cp, i) => (
-                cp.path && <path key={`compare-${i}`} d={cp.path} fill="none" stroke={cp.color}
-                  strokeWidth={cp.width ?? 2.2} strokeDasharray={cp.dash} strokeLinejoin="round" strokeLinecap="round" />
-              ))}
+              {atEnd && data[n - 1] != null && (
+                <circle
+                  cx={X(n - 1)}
+                  cy={Y(data[n - 1])}
+                  r={3.6}
+                  fill={color}
+                />
+              )}
+              {comparePaths.map(
+                (cp, i) =>
+                  cp.path && (
+                    <path
+                      key={`compare-${i}`}
+                      d={cp.path}
+                      fill="none"
+                      stroke={cp.color}
+                      strokeWidth={cp.width ?? 2.2}
+                      strokeDasharray={cp.dash}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  ),
+              )}
             </>
           ) : (
             cds.map((c, i) => {
               const up = c.c >= c.o;
               const col = up ? UP : DOWN;
-              const top = Y(Math.max(c.o, c.c)), bot = Y(Math.min(c.o, c.c));
+              const top = Y(Math.max(c.o, c.c)),
+                bot = Y(Math.min(c.o, c.c));
               return (
                 <g key={i}>
-                  <line x1={X(i)} y1={Y(c.h)} x2={X(i)} y2={Y(c.l)} stroke={col} strokeWidth={1} />
-                  <rect x={X(i) - bw / 2} y={top} width={bw} height={Math.max(1, bot - top)} fill={col} rx={0.8} />
+                  <line
+                    x1={X(i)}
+                    y1={Y(c.h)}
+                    x2={X(i)}
+                    y2={Y(c.l)}
+                    stroke={col}
+                    strokeWidth={1}
+                  />
+                  <rect
+                    x={X(i) - bw / 2}
+                    y={top}
+                    width={bw}
+                    height={Math.max(1, bot - top)}
+                    fill={col}
+                    rx={0.8}
+                  />
                 </g>
               );
             })
@@ -496,17 +727,29 @@ export default function PriceChart({
           {/* 구간 고·저 — 고가는 상단에 붙으므로 라벨을 점 아래로, 저가는 점 위로 둔다(잘림 방지). */}
           {hiLo && !scrubbing && (
             <>
-              {([
-                { i: hiLo.hiI, v: hiLo.hiV, tag: '최고', dy: 13 },
-                { i: hiLo.loI, v: hiLo.loV, tag: '최저', dy: -6 },
-              ] as const).map(({ i, v, tag, dy }) => {
+              {(
+                [
+                  { i: hiLo.hiI, v: hiLo.hiV, tag: '최고', dy: 13 },
+                  { i: hiLo.loI, v: hiLo.loV, tag: '최저', dy: -6 },
+                ] as const
+              ).map(({ i, v, tag, dy }) => {
                 const atRight = X(i) > w * 0.72;
                 return (
                   <g key={tag} opacity={0.85}>
-                    <circle cx={X(i)} cy={Y(v)} r={2.4} fill="var(--text-sub)" />
-                    <text x={atRight ? X(i) - 5 : X(i) + 5} y={Y(v) + dy}
+                    <circle
+                      cx={X(i)}
+                      cy={Y(v)}
+                      r={2.4}
+                      fill="var(--text-sub)"
+                    />
+                    <text
+                      x={atRight ? X(i) - 5 : X(i) + 5}
+                      y={Y(v) + dy}
                       textAnchor={atRight ? 'end' : 'start'}
-                      className="font-mono" fontSize={10} fill="var(--text-sub)">
+                      className="font-mono"
+                      fontSize={10}
+                      fill="var(--text-sub)"
+                    >
                       {tag} {money(v)}
                     </text>
                   </g>
@@ -516,11 +759,34 @@ export default function PriceChart({
           )}
           {idx != null && (
             <>
-              <line x1={X(idx)} y1={pad.t - 6} x2={X(idx)} y2={height - pad.b + 4} stroke='var(--chart-crosshair)' strokeWidth={1} strokeDasharray="3 3" />
-              {data[idx] != null && <>
-                <circle cx={X(idx)} cy={Y(data[idx])} r={8} fill={color} fillOpacity={0.18} />
-                <circle cx={X(idx)} cy={Y(data[idx])} r={4.6} fill={color} stroke="var(--bg)" strokeWidth={2.4} />
-              </>}
+              <line
+                x1={X(idx)}
+                y1={pad.t - 6}
+                x2={X(idx)}
+                y2={height - pad.b + 4}
+                stroke="var(--chart-crosshair)"
+                strokeWidth={1}
+                strokeDasharray="3 3"
+              />
+              {data[idx] != null && (
+                <>
+                  <circle
+                    cx={X(idx)}
+                    cy={Y(data[idx])}
+                    r={8}
+                    fill={color}
+                    fillOpacity={0.18}
+                  />
+                  <circle
+                    cx={X(idx)}
+                    cy={Y(data[idx])}
+                    r={4.6}
+                    fill={color}
+                    stroke="var(--bg)"
+                    strokeWidth={2.4}
+                  />
+                </>
+              )}
             </>
           )}
         </svg>
@@ -529,46 +795,92 @@ export default function PriceChart({
         {validVols.length > 0 && (
           <>
             <div className="mt-3 flex items-center justify-between px-0.5">
-              <span className="text-[10.5px] font-semibold text-mut">거래량</span>
+              <span className="text-[10.5px] font-semibold text-mut">
+                거래량
+              </span>
               <span className="font-mono text-[10.5px] text-sub">
                 {idx == null
                   ? `평균 ${validVols.length ? Math.round(validVols.reduce((a, b) => a + b, 0) / validVols.length).toLocaleString() : 0}`
                   : (vols[idx]?.toLocaleString() ?? '—')}
               </span>
             </div>
-            <svg width="100%" height={VH} viewBox={`0 0 ${w} ${VH}`} className="mt-1.5 block">
+            <svg
+              width="100%"
+              height={VH}
+              viewBox={`0 0 ${w} ${VH}`}
+              className="mt-1.5 block"
+            >
               {vols.map((v, i) => {
                 if (v == null || v <= 0) return null;
                 const up = dirUp(i);
                 const h = Math.max(1.5, (v / vmax) * (VH - 10));
-                return <rect key={i} x={X(i) - bw / 2} y={VH - h} width={bw} height={h} rx={Math.min(1.2, bw / 2)}
-                  fill={up ? UP : DOWN} fillOpacity={idx == null ? 0.42 : idx === i ? 1 : 0.16} />;
+                return (
+                  <rect
+                    key={i}
+                    x={X(i) - bw / 2}
+                    y={VH - h}
+                    width={bw}
+                    height={h}
+                    rx={Math.min(1.2, bw / 2)}
+                    fill={up ? UP : DOWN}
+                    fillOpacity={idx == null ? 0.42 : idx === i ? 1 : 0.16}
+                  />
+                );
               })}
-              {idx != null && <line x1={X(idx)} y1={0} x2={X(idx)} y2={VH} stroke='var(--chart-crosshair)' strokeWidth={1} strokeDasharray="3 3" />}
+              {idx != null && (
+                <line
+                  x1={X(idx)}
+                  y1={0}
+                  x2={X(idx)}
+                  y2={VH}
+                  stroke="var(--chart-crosshair)"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                />
+              )}
             </svg>
           </>
         )}
 
         {idx != null && (
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.12 }}
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.12 }}
             className="pointer-events-none absolute z-10 rounded-[10px] border border-[var(--chart-base)] bg-[var(--chart-tooltip)] px-2.5 py-2 shadow-2xl"
-            style={{ left: tipX, top: -4, minWidth: '124px' }}>
-            <div className="mb-0.5 text-[10.5px] text-sub">{label(s0 + idx)}</div>
+            style={{ left: tipX, top: -4, minWidth: '124px' }}
+          >
+            <div className="mb-0.5 text-[10.5px] text-sub">
+              {label(s0 + idx)}
+            </div>
             {data[idx] == null ? (
-              <div className="font-mono text-[13.5px] font-bold text-mut">거래 없음</div>
+              <div className="font-mono text-[13.5px] font-bold text-mut">
+                거래 없음
+              </div>
             ) : (
               <>
-                <div className="font-mono text-[13.5px] font-extrabold text-fg">{money(cur$)}</div>
-                <div className="mt-0.5 font-mono text-[11px] font-bold" style={{ color }}>
-                  {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+                <div className="font-mono text-[13.5px] font-extrabold text-fg">
+                  {money(cur$)}
+                </div>
+                <div
+                  className="mt-0.5 font-mono text-[11px] font-bold"
+                  style={{ color }}
+                >
+                  {pct >= 0 ? '+' : ''}
+                  {pct.toFixed(2)}%
                 </div>
               </>
             )}
             {comparePaths.map((cp, i) => {
               const v = cp.data[idx];
               return (
-                <div key={`compare-tooltip-${i}`} className="mt-1.5 pt-1.5 border-t border-[var(--chart-divider)] text-[10px]">
-                  <div className="text-sub" style={{ color: cp.color }}>{cp.name}</div>
+                <div
+                  key={`compare-tooltip-${i}`}
+                  className="mt-1.5 border-t border-[var(--chart-divider)] pt-1.5 text-[10px]"
+                >
+                  <div className="text-sub" style={{ color: cp.color }}>
+                    {cp.name}
+                  </div>
                   <div className="font-mono text-[11px] font-bold text-fg">
                     {v == null ? '—' : money(v)}
                   </div>
@@ -585,7 +897,11 @@ export default function PriceChart({
         {tickIdx.map((i, k) => {
           const t = label(s0 + i);
           const dup = k > 0 && t === label(s0 + tickIdx[k - 1]);
-          return <span key={k} className="font-mono text-[10.5px] text-mut">{dup ? '' : t}</span>;
+          return (
+            <span key={k} className="font-mono text-[10.5px] text-mut">
+              {dup ? '' : t}
+            </span>
+          );
         })}
       </div>
 
@@ -598,15 +914,21 @@ export default function PriceChart({
       {/* 범례 — 선이 둘 이상이면 무엇이 무엇인지 말해야 한다(호버해야 알 수 있으면 범례가 아니다). */}
       {(cmpSeries.length > 0 || bridge) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[10.5px] text-mut">
-          {cmpSeries.map((cs) => (
+          {cmpSeries.map(cs => (
             <span key={cs.name} className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-0 w-3.5" style={{ borderTop: `1.6px dashed ${cs.color}` }} />
+              <span
+                className="inline-block h-0 w-3.5"
+                style={{ borderTop: `1.6px dashed ${cs.color}` }}
+              />
               {cs.name}
             </span>
           ))}
           {bridge && (
             <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-0 w-3.5" style={{ borderTop: `1.5px dotted ${color}`, opacity: 0.6 }} />
+              <span
+                className="inline-block h-0 w-3.5"
+                style={{ borderTop: `1.5px dotted ${color}`, opacity: 0.6 }}
+              />
               거래 없는 달 건너뜀
             </span>
           )}
@@ -615,32 +937,92 @@ export default function PriceChart({
 
       {/* 줌 컨트롤 + 미니맵 */}
       <div className="mt-3.5 flex items-center justify-between">
-        <span className="text-[10.5px] font-semibold text-mut">구간 선택 · 휠로 확대, 드래그로 이동</span>
+        <span className="text-[10.5px] font-semibold text-mut">
+          구간 선택 · 휠로 확대, 드래그로 이동
+        </span>
         <div className="flex items-center gap-1.5">
-          <span className="mr-0.5 font-mono text-[11px] text-sub">{zoom < 1.05 ? '전체' : `${zoom.toFixed(1)}×`}</span>
-          <button onClick={() => applyZoom(zoom / 1.5)} className="grid h-[26px] w-[26px] place-items-center rounded-[7px] border border-[var(--chart-frame)] bg-panel2 text-sub hover:text-fg">−</button>
-          <button onClick={() => applyZoom(zoom * 1.5)} className="grid h-[26px] w-[26px] place-items-center rounded-[7px] border border-[var(--chart-frame)] bg-panel2 text-sub hover:text-fg">+</button>
+          <span className="mr-0.5 font-mono text-[11px] text-sub">
+            {zoom < 1.05 ? '전체' : `${zoom.toFixed(1)}×`}
+          </span>
+          <button
+            onClick={() => applyZoom(zoom / 1.5)}
+            className="grid h-[26px] w-[26px] place-items-center rounded-[7px] border border-[var(--chart-frame)] bg-panel2 text-sub hover:text-fg"
+          >
+            −
+          </button>
+          <button
+            onClick={() => applyZoom(zoom * 1.5)}
+            className="grid h-[26px] w-[26px] place-items-center rounded-[7px] border border-[var(--chart-frame)] bg-panel2 text-sub hover:text-fg"
+          >
+            +
+          </button>
           {zoom > 1.05 && (
-            <button onClick={() => { setZoom(1); setStart(0); setIdx(null); }}
-              className="h-[26px] rounded-[7px] border border-[var(--chart-frame)] bg-panel2 px-2.5 text-[11px] font-bold text-[var(--chart-scrub)]">전체</button>
+            <button
+              onClick={() => {
+                setZoom(1);
+                setStart(0);
+                setIdx(null);
+              }}
+              className="h-[26px] rounded-[7px] border border-[var(--chart-frame)] bg-panel2 px-2.5 text-[11px] font-bold text-[var(--chart-scrub)]"
+            >
+              전체
+            </button>
           )}
         </div>
       </div>
-      <svg width="100%" height={BH} viewBox={`0 0 ${w} ${BH}`} className="mt-2.5 block cursor-pointer"
+      <svg
+        width="100%"
+        height={BH}
+        viewBox={`0 0 ${w} ${BH}`}
+        className="mt-2.5 block cursor-pointer"
         style={{ touchAction: 'none' }}
-        onPointerDown={brushJump} onPointerMove={(e) => e.buttons && brushJump(e)}>
-        <rect x={0} y={0} width={w} height={BH} rx={8} fill="var(--chart-minimap-bg)" stroke="var(--border)" />
-        <path d={bline} fill="none" stroke='var(--chart-minimap-line)' strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
-        <rect x={BX(s0)} y={1} width={Math.max(7, BX(Math.min(N - 1, s0 + cnt - 1)) - BX(s0))} height={BH - 2}
-          rx={6} fill={brandWithAlpha(0.15)} stroke="var(--brand)" strokeWidth={1.2} />
+        onPointerDown={brushJump}
+        onPointerMove={e => e.buttons && brushJump(e)}
+      >
+        <rect
+          x={0}
+          y={0}
+          width={w}
+          height={BH}
+          rx={8}
+          fill="var(--chart-minimap-bg)"
+          stroke="var(--border)"
+        />
+        <path
+          d={bline}
+          fill="none"
+          stroke="var(--chart-minimap-line)"
+          strokeWidth={1.6}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <rect
+          x={BX(s0)}
+          y={1}
+          width={Math.max(7, BX(Math.min(N - 1, s0 + cnt - 1)) - BX(s0))}
+          height={BH - 2}
+          rx={6}
+          fill={brandWithAlpha(0.15)}
+          stroke="var(--brand)"
+          strokeWidth={1.2}
+        />
       </svg>
 
       {/* 기간 탭 (데이터 있는 기간만 표시) */}
       <div className="mt-4 flex gap-[3px] rounded-[11px] border border-line bg-row p-1">
-        {PERIODS.filter((p) => (series[p]?.length ?? 0) > 0).map((p) => (
-          <button key={p} onClick={() => { setPeriod(p); setTouched(true); }}
+        {PERIODS.filter(p => (series[p]?.length ?? 0) > 0).map(p => (
+          <button
+            key={p}
+            onClick={() => {
+              setPeriod(p);
+              setTouched(true);
+            }}
             className={`flex-1 rounded-lg py-[7px] text-[12.5px] font-bold transition-colors ${
-              period === p ? 'bg-[var(--brand-18)] text-fg' : 'text-sub hover:text-fg'}`}>
+              period === p
+                ? 'bg-[var(--brand-18)] text-fg'
+                : 'text-sub hover:text-fg'
+            }`}
+          >
             {p}
           </button>
         ))}

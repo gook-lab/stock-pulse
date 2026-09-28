@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { Receipt, Bell, Home as HomeIcon, Newspaper, type LucideIcon } from 'lucide-react';
+import {
+  Receipt,
+  Bell,
+  Home as HomeIcon,
+  Newspaper,
+  type LucideIcon,
+} from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { EmptyState, SkeletonRows } from '@/components/common';
 import { buildHomeFeed } from '../../lib/homeFeed';
@@ -8,7 +14,12 @@ import type { HomeFeedItem } from '../../data/types';
 import s from './Home.module.css';
 
 // 이모지는 폰트 크기·테마에 반응하지 않는다(F4) — 프로젝트 표준 lucide 아이콘 사용(AppBar 참조).
-const ICONS: Record<HomeFeedItem['type'], LucideIcon> = { order: Receipt, alert: Bell, apt: HomeIcon, news: Newspaper };
+const ICONS: Record<HomeFeedItem['type'], LucideIcon> = {
+  order: Receipt,
+  alert: Bell,
+  apt: HomeIcon,
+  news: Newspaper,
+};
 
 function ago(ts: number, now: number): string {
   const m = Math.max(0, Math.round((now - ts) / 60_000));
@@ -21,18 +32,25 @@ function ago(ts: number, now: number): string {
 
 /** 타임라인 피드 — 주문·알림·관심단지·보유종목 뉴스, 시간 역순 단일 규칙(설계 W2). */
 export default function FeedCard() {
-  const loaded = useStore((st) => st.loaded);
-  const paperOrders = useStore((st) => st.paperOrders);
-  const notifications = useStore((st) => st.notifications);
-  const news = useStore((st) => st.news);
-  const portfolio = useStore((st) => st.portfolio);
-  const mode = useStore((st) => st.colorMode);
-  const selectStock = useStore((st) => st.selectStock);
-  const setTab = useStore((st) => st.setTab);
+  const loaded = useStore(st => st.loaded);
+  const paperOrders = useStore(st => st.paperOrders);
+  const notifications = useStore(st => st.notifications);
+  const news = useStore(st => st.news);
+  const portfolio = useStore(st => st.portfolio);
+  const mode = useStore(st => st.colorMode);
+  const selectStock = useStore(st => st.selectStock);
+  const setTab = useStore(st => st.setTab);
 
   const now = Date.now();
   const feed = useMemo(
-    () => buildHomeFeed({ orders: paperOrders, notifications, news, holdings: portfolio?.holdings ?? [], now }),
+    () =>
+      buildHomeFeed({
+        orders: paperOrders,
+        notifications,
+        news,
+        holdings: portfolio?.holdings ?? [],
+        now,
+      }),
     // now 는 렌더마다 바뀌지만 피드 재계산 기준은 소스 데이터다 — 분 단위 표기는 리렌더에 맡긴다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [paperOrders, notifications, news, portfolio],
@@ -46,19 +64,37 @@ export default function FeedCard() {
 
   return (
     <section className="card">
-      <div className="card-h"><b>내 피드</b><span className="tag">주문 · 알림 · 보유종목 뉴스</span></div>
+      <div className="card-h">
+        <b>내 피드</b>
+        <span className="tag">주문 · 알림 · 보유종목 뉴스</span>
+      </div>
       {feed.length ? (
         <div className={s.feed}>
-          {feed.map((f) => {
+          {feed.map(f => {
             const Icon = ICONS[f.type];
             return (
-              <button key={f.id} type="button" className={s.feedItem} onClick={() => open(f)}>
-                <span className={s.feedIcon} aria-hidden><Icon size={14} /></span>
+              <button
+                key={f.id}
+                type="button"
+                className={s.feedItem}
+                onClick={() => open(f)}
+              >
+                <span className={s.feedIcon} aria-hidden>
+                  <Icon size={14} />
+                </span>
                 <span className={s.feedBody}>
                   <span
                     className={s.feedTitle}
-                    style={f.sentiment && f.sentiment !== 'neutral'
-                      ? { color: signColor(f.sentiment === 'good' ? 1 : -1, mode) } : undefined}
+                    style={
+                      f.sentiment && f.sentiment !== 'neutral'
+                        ? {
+                            color: signColor(
+                              f.sentiment === 'good' ? 1 : -1,
+                              mode,
+                            ),
+                          }
+                        : undefined
+                    }
                   >
                     {f.title}
                   </span>
@@ -72,7 +108,10 @@ export default function FeedCard() {
           })}
         </div>
       ) : loaded ? (
-        <EmptyState title="아직 조용합니다" desc="주문을 넣거나 가격 알림을 만들면 여기에 쌓입니다." />
+        <EmptyState
+          title="아직 조용합니다"
+          desc="주문을 넣거나 가격 알림을 만들면 여기에 쌓입니다."
+        />
       ) : (
         // 뉴스(보유종목 필터)가 아직 안 왔을 수 있다 — 로딩과 빈 상태를 구분(ISSUE-001).
         <SkeletonRows rows={5} />

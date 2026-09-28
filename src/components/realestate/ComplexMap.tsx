@@ -1,10 +1,23 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { fmt, scaleColor, legendStops, readableTextOn, SIGNAL_DOMAIN, MUTED } from '@/lib/colors';
+import {
+  fmt,
+  scaleColor,
+  legendStops,
+  readableTextOn,
+  SIGNAL_DOMAIN,
+  MUTED,
+} from '@/lib/colors';
 import type { AptComplex, ScreenRank } from '@/data/types';
 import { formatSignalValue } from './ComplexList';
 import s from './ComplexMap.module.css';
-import { loadKakaoSdk, type KakaoMaps, type KakaoMap, type LatLng, type CustomOverlay } from '@/lib/kakaoSdk';
+import {
+  loadKakaoSdk,
+  type KakaoMaps,
+  type KakaoMap,
+  type LatLng,
+  type CustomOverlay,
+} from '@/lib/kakaoSdk';
 
 // ───────────────────────────────────────────────────────────────────
 // 카카오맵 SDK 싱글턴 로드
@@ -45,15 +58,21 @@ function getScreenPixel(
       const p = ok(proj.containerPointFromCoords(latlng));
       if (p) return p;
     }
-  } catch { /* 폴백으로 진행 */ }
+  } catch {
+    /* 폴백으로 진행 */
+  }
 
   try {
     const b = map.getBounds();
-    const sw = b.getSouthWest(), ne = b.getNorthEast();
-    const w = container?.clientWidth || 0, h = container?.clientHeight || 0;
-    if (!w || !h) return null;   // 크기를 모르면 추측하지 않는다 — 틀린 좌표가 겹침 판정을 오염시킨다
-    const x = ((latlng.getLng() - sw.getLng()) / (ne.getLng() - sw.getLng())) * w;
-    const y = h - ((latlng.getLat() - sw.getLat()) / (ne.getLat() - sw.getLat())) * h;
+    const sw = b.getSouthWest(),
+      ne = b.getNorthEast();
+    const w = container?.clientWidth || 0,
+      h = container?.clientHeight || 0;
+    if (!w || !h) return null; // 크기를 모르면 추측하지 않는다 — 틀린 좌표가 겹침 판정을 오염시킨다
+    const x =
+      ((latlng.getLng() - sw.getLng()) / (ne.getLng() - sw.getLng())) * w;
+    const y =
+      h - ((latlng.getLat() - sw.getLat()) / (ne.getLat() - sw.getLat())) * h;
     return ok({ x, y });
   } catch {
     return null;
@@ -88,8 +107,10 @@ class CollisionGrid {
     const top = this.anchor === 'bottom' ? p.y - this.h : p.y - this.h / 2;
     const bottom = this.anchor === 'bottom' ? p.y : p.y + this.h / 2;
     return {
-      cx0: Math.floor((p.x - this.w / 2) / this.cw), cx1: Math.floor((p.x + this.w / 2) / this.cw),
-      cy0: Math.floor(top / this.ch), cy1: Math.floor(bottom / this.ch),
+      cx0: Math.floor((p.x - this.w / 2) / this.cw),
+      cx1: Math.floor((p.x + this.w / 2) / this.cw),
+      cy0: Math.floor(top / this.ch),
+      cy1: Math.floor(bottom / this.ch),
     };
   }
 
@@ -97,7 +118,8 @@ class CollisionGrid {
     if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return false;
     const r = this.range(p);
     for (let cx = r.cx0; cx <= r.cx1; cx++) {
-      for (let cy = r.cy0; cy <= r.cy1; cy++) if (this.cells.has(`${cx},${cy}`)) return false;
+      for (let cy = r.cy0; cy <= r.cy1; cy++)
+        if (this.cells.has(`${cx},${cy}`)) return false;
     }
     return true;
   }
@@ -116,7 +138,7 @@ class CollisionGrid {
 
 interface AggregatedDistrict {
   key: string;
-  label: string;        // 표시명 — '강남' 또는 '대치동'
+  label: string; // 표시명 — '강남' 또는 '대치동'
   gu: string | null;
   umdNm: string | null; // 구 단계에서는 null
   lat: number;
@@ -133,7 +155,16 @@ function createAggregates(
   byId: Map<string, AptComplex>,
   level: AggLevel,
 ): AggregatedDistrict[] {
-  const groups = new Map<string, { gu: string | null; umdNm: string | null; lats: number[]; lngs: number[]; values: number[] }>();
+  const groups = new Map<
+    string,
+    {
+      gu: string | null;
+      umdNm: string | null;
+      lats: number[];
+      lngs: number[];
+      values: number[];
+    }
+  >();
 
   for (const rank of ranks) {
     const apt = byId.get(rank.id);
@@ -142,10 +173,18 @@ function createAggregates(
     const key = level === 'gu' ? apt.gu : `${apt.gu}|${apt.umdNm}`;
     let g = groups.get(key);
     if (!g) {
-      g = { gu: apt.gu, umdNm: level === 'gu' ? null : apt.umdNm, lats: [], lngs: [], values: [] };
+      g = {
+        gu: apt.gu,
+        umdNm: level === 'gu' ? null : apt.umdNm,
+        lats: [],
+        lngs: [],
+        values: [],
+      };
       groups.set(key, g);
     }
-    g.lats.push(apt.lat); g.lngs.push(apt.lng); g.values.push(rank.value);
+    g.lats.push(apt.lat);
+    g.lngs.push(apt.lng);
+    g.values.push(rank.value);
   }
 
   const out: AggregatedDistrict[] = [];
@@ -164,7 +203,9 @@ function createAggregates(
   }
 
   // 멤버 수 상위부터 — 값 기준으로 자르면 하락 동네가 지도에서 사라진다
-  return out.sort((a, b) => b.count - a.count).slice(0, level === 'gu' ? 25 : 30);
+  return out
+    .sort((a, b) => b.count - a.count)
+    .slice(0, level === 'gu' ? 25 : 30);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -176,37 +217,37 @@ export default function ComplexMap() {
   const mapRef = useRef<KakaoMap | null>(null);
   const overlaysRef = useRef<CustomOverlay[]>([]);
 
-  const aptScreen = useStore((st) => st.aptScreen);
-  const aptComplexes = useStore((st) => st.aptComplexes);
-  const hoveredComplexId = useStore((st) => st.hoveredComplexId);
-  const selectedComplexId = useStore((st) => st.selectedComplexId);
-  const selectionSource = useStore((st) => st.selectionSource);
-  const areaFilter = useStore((st) => st.areaFilter);
-  const colorMode = useStore((st) => st.colorMode);
-  const setHoveredComplex = useStore((st) => st.setHoveredComplex);
-  const selectComplex = useStore((st) => st.selectComplex);
-  const setAreaFilter = useStore((st) => st.setAreaFilter);
-  const setAptMapFailed = useStore((st) => st.setAptMapFailed);
+  const aptScreen = useStore(st => st.aptScreen);
+  const aptComplexes = useStore(st => st.aptComplexes);
+  const hoveredComplexId = useStore(st => st.hoveredComplexId);
+  const selectedComplexId = useStore(st => st.selectedComplexId);
+  const selectionSource = useStore(st => st.selectionSource);
+  const areaFilter = useStore(st => st.areaFilter);
+  const colorMode = useStore(st => st.colorMode);
+  const setHoveredComplex = useStore(st => st.setHoveredComplex);
+  const selectComplex = useStore(st => st.selectComplex);
+  const setAreaFilter = useStore(st => st.setAreaFilter);
+  const setAptMapFailed = useStore(st => st.setAptMapFailed);
 
   const [kakao, setKakao] = useState<KakaoMaps | null>(null);
   const [level, setLevel] = useState(8);
   // 팬만 해도 뷰포트가 바뀐다 — level 이 같아도 idle 마다 오버레이를 다시 걸러야 한다
   const [viewportTick, setViewportTick] = useState(0);
-  const [infoOpen, setInfoOpen] = useState(false);   // 범례 산식 설명 — 터치에서도 열려야 한다
+  const [infoOpen, setInfoOpen] = useState(false); // 범례 산식 설명 — 터치에서도 열려야 한다
   // hover 하이라이트는 재구성 없이 이 맵으로 스타일만 바꾼다 (재구성하면 마우스 아래 DOM 이 교체되어 플리커)
   const markerElsRef = useRef(new Map<string, HTMLDivElement>());
 
   /** 단지 마스터 인덱스 — effect 3곳이 각자 8,748개를 다시 Map 으로 만들던 것을 하나로. */
   const byId = useMemo(() => {
     const m = new Map<string, AptComplex>();
-    aptComplexes?.items.forEach((c) => m.set(c.aptSeq, c));
+    aptComplexes?.items.forEach(c => m.set(c.aptSeq, c));
     return m;
   }, [aptComplexes]);
 
   /** 순위 인덱스 — 선택 단지 조회를 find(O(n)) 대신 O(1) 로. */
   const rankById = useMemo(() => {
     const m = new Map<string, ScreenRank>();
-    aptScreen?.ranked.forEach((r) => m.set(r.id, r));
+    aptScreen?.ranked.forEach(r => m.set(r.id, r));
     return m;
   }, [aptScreen]);
 
@@ -241,7 +282,9 @@ export default function ComplexMap() {
           return;
         }
 
-        const config = (await configRes.json()) as { kakaoJsKey?: string | null };
+        const config = (await configRes.json()) as {
+          kakaoJsKey?: string | null;
+        };
         if (!config.kakaoJsKey) {
           if (isMounted) {
             setAptMapFailed(true, 'KAKAO_JS_KEY 미설정 (server/.env)');
@@ -252,16 +295,22 @@ export default function ComplexMap() {
         // 사전 점검 — 미등록 도메인이면 카카오가 Referer 를 보고 401 을 준다.
         // 브라우저 직접 fetch 는 CORS 로 원인이 안 보이므로 서버 프록시로 물어본다.
         try {
-          const probe = await fetch(`/api/realestate/kakao-probe?origin=${encodeURIComponent(location.origin)}`)
-            .then((r) => r.json());
+          const probe = await fetch(
+            `/api/realestate/kakao-probe?origin=${encodeURIComponent(location.origin)}`,
+          ).then(r => r.json());
           if (!probe.ok) {
             const reason = probe.domainMismatch
               ? `카카오 콘솔에 Web 도메인(${location.origin}) 등록 필요 — 등록 후 새로고침`
               : `카카오 SDK 점검 실패(${probe.status ?? '?'}) — 키·카카오맵 사용 설정 확인`;
-            if (isMounted) { setAptMapFailed(true, reason); useStore.getState().setViewportBounds(null); }
+            if (isMounted) {
+              setAptMapFailed(true, reason);
+              useStore.getState().setViewportBounds(null);
+            }
             return;
           }
-        } catch { /* 프록시 실패 시 본 로드로 진행 — 실패해도 아래 catch 가 잡는다 */ }
+        } catch {
+          /* 프록시 실패 시 본 로드로 진행 — 실패해도 아래 catch 가 잡는다 */
+        }
 
         // SDK 로드
         const sdk = await loadKakaoSdk(config.kakaoJsKey);
@@ -307,13 +356,15 @@ export default function ComplexMap() {
       const programmatic = Date.now() <= programmaticUntilRef.current;
       if (!programmatic) userMovedRef.current = true;
       setLevel(mapInstance.getLevel());
-      setViewportTick((t) => t + 1);
+      setViewportTick(t => t + 1);
 
       // 리스트가 화면과 같은 범위를 보게 한다(연동 토글은 리스트가 판단).
       const vb = mapInstance.getBounds();
       useStore.getState().setViewportBounds({
-        swLat: vb.getSouthWest().getLat(), swLng: vb.getSouthWest().getLng(),
-        neLat: vb.getNorthEast().getLat(), neLng: vb.getNorthEast().getLng(),
+        swLat: vb.getSouthWest().getLat(),
+        swLng: vb.getSouthWest().getLng(),
+        neLat: vb.getNorthEast().getLat(),
+        neLng: vb.getNorthEast().getLng(),
       });
 
       // 지도앱다운 동작: 사용자가 직접 넓게 보거나(집계 단계) 다른 동네로 옮기면
@@ -323,10 +374,14 @@ export default function ComplexMap() {
       if (!af) return;
       const c = areaCenterRef.current;
       const b = mapInstance.getBounds();
-      const sw = b.getSouthWest(), ne = b.getNorthEast();
-      const outOfView = !c
-        || c.lat < sw.getLat() || c.lat > ne.getLat()
-        || c.lng < sw.getLng() || c.lng > ne.getLng();
+      const sw = b.getSouthWest(),
+        ne = b.getNorthEast();
+      const outOfView =
+        !c ||
+        c.lat < sw.getLat() ||
+        c.lat > ne.getLat() ||
+        c.lng < sw.getLng() ||
+        c.lng > ne.getLng();
       if (mapInstance.getLevel() >= 7 || outOfView) setAreaFilter(null);
     };
 
@@ -366,7 +421,7 @@ export default function ComplexMap() {
     const ac = new AbortController();
     const clear = () => {
       ac.abort();
-      overlaysRef.current.forEach((o) => o.setMap(null));
+      overlaysRef.current.forEach(o => o.setMap(null));
       overlaysRef.current = [];
       markerElsRef.current.clear();
     };
@@ -376,12 +431,18 @@ export default function ComplexMap() {
     const bounds = mapRef.current.getBounds();
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
-    const swLat = sw.getLat(), swLng = sw.getLng(), neLat = ne.getLat(), neLng = ne.getLng();
-    const inView = (lat: number, lng: number) => lat >= swLat && lat <= neLat && lng >= swLng && lng <= neLng;
+    const swLat = sw.getLat(),
+      swLng = sw.getLng(),
+      neLat = ne.getLat(),
+      neLng = ne.getLng();
+    const inView = (lat: number, lng: number) =>
+      lat >= swLat && lat <= neLat && lng >= swLng && lng <= neLng;
     // 지역 필터는 리스트만이 아니라 지도에도 걸린다 — 둘은 같은 쿼리의 두 뷰다.
     // 리스트는 "중계동 45단지"인데 지도가 서울 전역을 뿌리면 화면이 서로 다른 말을 한다.
-    const inArea = (apt: AptComplex) => !areaFilter
-      || (apt.gu === areaFilter.gu && (!areaFilter.umdNm || apt.umdNm === areaFilter.umdNm));
+    const inArea = (apt: AptComplex) =>
+      !areaFilter ||
+      (apt.gu === areaFilter.gu &&
+        (!areaFilter.umdNm || apt.umdNm === areaFilter.umdNm));
 
     const signal = aptScreen.signal;
     const domain = SIGNAL_DOMAIN[signal];
@@ -391,7 +452,12 @@ export default function ComplexMap() {
       // level 9+ 는 수도권이 통째로 보이는 배율이라 동 25개가 서울 한 점에 겹친다.
       const aggLevel: AggLevel = currentLevel >= 9 ? 'gu' : 'dong';
       const aggs = createAggregates(
-        areaFilter ? aptScreen.ranked.filter((r) => { const a = byId.get(r.id); return a ? inArea(a) : false; }) : aptScreen.ranked,
+        areaFilter
+          ? aptScreen.ranked.filter(r => {
+              const a = byId.get(r.id);
+              return a ? inArea(a) : false;
+            })
+          : aptScreen.ranked,
         byId,
         aggLevel,
       );
@@ -401,8 +467,12 @@ export default function ComplexMap() {
 
       for (const agg of aggs) {
         if (!inView(agg.lat, agg.lng)) continue;
-        const pixel = getScreenPixel(mapRef.current, new kakao.LatLng(agg.lat, agg.lng), containerRef.current);
-        if (pixel && !boxGrid.canPlace(pixel)) continue;   // 자리가 없으면 그리지 않는다(겹쳐 읽히느니)
+        const pixel = getScreenPixel(
+          mapRef.current,
+          new kakao.LatLng(agg.lat, agg.lng),
+          containerRef.current,
+        );
+        if (pixel && !boxGrid.canPlace(pixel)) continue; // 자리가 없으면 그리지 않는다(겹쳐 읽히느니)
         if (pixel) boxGrid.place(pixel);
 
         // 계산 표본이 너무 적으면 색으로 말하면 안 된다 — 회색 '거래부족'
@@ -413,22 +483,29 @@ export default function ComplexMap() {
         const el = document.createElement('div');
         el.className = s.districtBox;
         el.style.backgroundColor = bg;
-        el.style.color = readableTextOn(base);   // 밝은 배경에 흰 글씨 대비 붕괴 방지
+        el.style.color = readableTextOn(base); // 밝은 배경에 흰 글씨 대비 붕괴 방지
         el.innerHTML = `
           <div class="${s.districtName}">${agg.label}</div>
           <div class="mono" style="font-size: 13px; font-weight: 700;">${thin ? '거래부족' : formatSignalValue(agg.value, signal)}</div>
           <div style="font-size: 11.5px; opacity: .8;">단지 ${agg.count}</div>
         `;
         el.style.cursor = 'pointer';
-        el.addEventListener('click', () => {
-          // 줌만 하지 않는다 — 리스트도 이 지역으로 좁혀 지도→리스트 방향을 잇는다 (전역 순위는 유지)
-          if (agg.gu) setAreaFilter(agg.umdNm ? { gu: agg.gu, umdNm: agg.umdNm } : { gu: agg.gu });
-          moveMap((m) => {
-            m.setCenter(new kakao.LatLng(agg.lat, agg.lng));
-            // 구를 누르면 동이 보이는 배율로, 동을 누르면 단지가 보이는 배율로
-            m.setLevel(aggLevel === 'gu' ? 7 : 5);
-          });
-        }, { signal: ac.signal });
+        el.addEventListener(
+          'click',
+          () => {
+            // 줌만 하지 않는다 — 리스트도 이 지역으로 좁혀 지도→리스트 방향을 잇는다 (전역 순위는 유지)
+            if (agg.gu)
+              setAreaFilter(
+                agg.umdNm ? { gu: agg.gu, umdNm: agg.umdNm } : { gu: agg.gu },
+              );
+            moveMap(m => {
+              m.setCenter(new kakao.LatLng(agg.lat, agg.lng));
+              // 구를 누르면 동이 보이는 배율로, 동을 누르면 단지가 보이는 배율로
+              m.setLevel(aggLevel === 'gu' ? 7 : 5);
+            });
+          },
+          { signal: ac.signal },
+        );
 
         const overlay = new kakao.CustomOverlay({
           position: new kakao.LatLng(agg.lat, agg.lng),
@@ -450,7 +527,11 @@ export default function ComplexMap() {
         rank?: ScreenRank;
       }
 
-      const addMarker = (apt: AptComplex, value: number | null, opts?: MarkerOpts) => {
+      const addMarker = (
+        apt: AptComplex,
+        value: number | null,
+        opts?: MarkerOpts,
+      ) => {
         if (apt.lat == null || apt.lng == null) return;
         const isGray = opts?.isGray ?? false;
         const isLabel = opts?.isLabel ?? false;
@@ -483,7 +564,10 @@ export default function ComplexMap() {
           line2.className = s.labelLine2;
           const areaStr = rank?.area ? `${rank.area}㎡` : '';
           // 96px 라벨에 소수 1자리까지 넣으면 잘린다 — 정밀도는 리스트·상세가 책임진다
-          const signalStr = value != null ? formatSignalValue(value, signal).replace(/\.\d+/, '') : '—';
+          const signalStr =
+            value != null
+              ? formatSignalValue(value, signal).replace(/\.\d+/, '')
+              : '—';
           line2.textContent = areaStr ? `${areaStr} ${signalStr}` : signalStr;
 
           el.appendChild(line1);
@@ -491,7 +575,8 @@ export default function ComplexMap() {
 
           const tip = document.createElement('span');
           tip.className = s.markerTip;
-          const priceTxt = rank?.price != null ? ` · 평당 ${fmt(rank.price, 0)}만` : '';
+          const priceTxt =
+            rank?.price != null ? ` · 평당 ${fmt(rank.price, 0)}만` : '';
           tip.textContent = `${apt.aptNm}${priceTxt}`;
           el.appendChild(tip);
         } else {
@@ -506,19 +591,37 @@ export default function ComplexMap() {
           } else {
             const r = opts?.rank;
             const amountTxt = formatAmount(r?.amount ?? null);
-            const head = amountTxt ? `${aptScreen.dealType === 'trade' ? '매' : '전'} ${amountTxt}` : '';
+            const head = amountTxt
+              ? `${aptScreen.dealType === 'trade' ? '매' : '전'} ${amountTxt}`
+              : '';
             const areaTxt = r?.area ? `${r.area}㎡` : '';
-            const sigTxt = value != null ? formatSignalValue(value, signal) : '조건 미충족';
-            const priceTxt = opts?.price != null ? `평당 ${fmt(opts.price, 0)}만` : '';
-            tip.textContent = [apt.aptNm, head, areaTxt, sigTxt, priceTxt].filter(Boolean).join(' · ');
+            const sigTxt =
+              value != null ? formatSignalValue(value, signal) : '조건 미충족';
+            const priceTxt =
+              opts?.price != null ? `평당 ${fmt(opts.price, 0)}만` : '';
+            tip.textContent = [apt.aptNm, head, areaTxt, sigTxt, priceTxt]
+              .filter(Boolean)
+              .join(' · ');
           }
           el.appendChild(tip);
         }
 
         const sig = { signal: ac.signal };
-        el.addEventListener('mouseover', () => setHoveredComplex(apt.aptSeq, 'map'), sig);
-        el.addEventListener('mouseout', () => setHoveredComplex(null, 'map'), sig);
-        el.addEventListener('click', () => selectComplex(apt.aptSeq, 'map'), sig);
+        el.addEventListener(
+          'mouseover',
+          () => setHoveredComplex(apt.aptSeq, 'map'),
+          sig,
+        );
+        el.addEventListener(
+          'mouseout',
+          () => setHoveredComplex(null, 'map'),
+          sig,
+        );
+        el.addEventListener(
+          'click',
+          () => selectComplex(apt.aptSeq, 'map'),
+          sig,
+        );
 
         const overlay = new kakao.CustomOverlay({
           position: new kakao.LatLng(apt.lat, apt.lng),
@@ -553,23 +656,41 @@ export default function ComplexMap() {
         candidateCount++;
 
         // 화면 픽셀 좌표 구하기
-        const pixel = getScreenPixel(mapRef.current, new kakao.LatLng(apt.lat, apt.lng), containerRef.current);
+        const pixel = getScreenPixel(
+          mapRef.current,
+          new kakao.LatLng(apt.lat, apt.lng),
+          containerRef.current,
+        );
         if (!pixel) {
           // 픽셀 좌표 실패 → 점으로 폴백
-          addMarker(apt, rank.value, { price: rank.price ?? null, zIndex: 100, rank });
+          addMarker(apt, rank.value, {
+            price: rank.price ?? null,
+            zIndex: 100,
+            rank,
+          });
           continue;
         }
 
         // 그리드 콜리전 체크 — amount 없으면 라벨 건너뛰기
-        const canLabel = rank.amount != null && grid.canPlace(pixel) && labelCount < maxLabels;
+        const canLabel =
+          rank.amount != null && grid.canPlace(pixel) && labelCount < maxLabels;
         if (canLabel) {
           // 라벨 배치
           grid.place(pixel);
           labelCount++;
-          addMarker(apt, rank.value, { price: rank.price ?? null, isLabel: true, zIndex: 105, rank });
+          addMarker(apt, rank.value, {
+            price: rank.price ?? null,
+            isLabel: true,
+            zIndex: 105,
+            rank,
+          });
         } else {
           // 점으로 폴백
-          addMarker(apt, rank.value, { price: rank.price ?? null, zIndex: 100, rank });
+          addMarker(apt, rank.value, {
+            price: rank.price ?? null,
+            zIndex: 100,
+            rank,
+          });
         }
       }
 
@@ -579,12 +700,17 @@ export default function ComplexMap() {
         if (apt && apt.lat != null && apt.lng != null) {
           const r = rankById.get(selectedId);
           const useLabel = r && r.amount != null;
-          addMarker(apt, r?.value ?? null, { price: r?.price ?? null, isLabel: useLabel, zIndex: 9999, rank: r });
+          addMarker(apt, r?.value ?? null, {
+            price: r?.price ?? null,
+            isLabel: useLabel,
+            zIndex: 9999,
+            rank: r,
+          });
         }
       }
 
       // ─── 회색 마커 (저거래·데이터부족 단지) — 캡 200 ───
-      const rankedSet = new Set(aptScreen.ranked.map((r) => r.id));
+      const rankedSet = new Set(aptScreen.ranked.map(r => r.id));
       let shownGray = 0;
       for (const apt of aptComplexes.items) {
         if (shownGray >= 200) break;
@@ -624,10 +750,16 @@ export default function ComplexMap() {
   // ─────────────────── 리스트발 선택 → 지도가 따라간다 ─────────────────────
   // 지도발 선택(selectionSource==='map')은 무시 — 사용자가 방금 클릭한 자리에서 지도를 빼앗지 않는다.
   useEffect(() => {
-    if (!kakao || !mapRef.current || !selectedComplexId || selectionSource !== 'list') return;
+    if (
+      !kakao ||
+      !mapRef.current ||
+      !selectedComplexId ||
+      selectionSource !== 'list'
+    )
+      return;
     const apt = byId.get(selectedComplexId);
     if (!apt || apt.lat == null || apt.lng == null) return;
-    moveMap((m) => {
+    moveMap(m => {
       if (m.getLevel() >= 7) m.setLevel(5);
       m.panTo(new kakao.LatLng(apt.lat!, apt.lng!));
     });
@@ -645,7 +777,9 @@ export default function ComplexMap() {
   useEffect(() => {
     if (!kakao || !mapRef.current || !aptScreen || !aptComplexes) return;
     const queryKey = `${aptScreen.signal}|${aptScreen.dealType}`;
-    const areaKey = areaFilter ? `${areaFilter.gu}|${areaFilter.umdNm ?? ''}` : '';
+    const areaKey = areaFilter
+      ? `${areaFilter.gu}|${areaFilter.umdNm ?? ''}`
+      : '';
     const prev = prevFitKeyRef.current;
     prevFitKeyRef.current = { query: queryKey, area: areaKey };
     if (!prev) return;
@@ -656,17 +790,24 @@ export default function ComplexMap() {
     const bounds = new kakao.LatLngBounds();
     let n = 0;
     const extend = (apt: AptComplex) => {
-      if (apt.lat != null && apt.lng != null) { bounds.extend(new kakao.LatLng(apt.lat, apt.lng)); n++; }
+      if (apt.lat != null && apt.lng != null) {
+        bounds.extend(new kakao.LatLng(apt.lat, apt.lng));
+        n++;
+      }
     };
 
     if (areaFilter) {
-      let sumLat = 0, sumLng = 0;
+      let sumLat = 0,
+        sumLng = 0;
       for (const r of aptScreen.ranked) {
         const apt = byId.get(r.id);
         if (!apt || apt.gu !== areaFilter.gu) continue;
         if (areaFilter.umdNm && apt.umdNm !== areaFilter.umdNm) continue;
         extend(apt);
-        if (apt.lat != null && apt.lng != null) { sumLat += apt.lat; sumLng += apt.lng; }
+        if (apt.lat != null && apt.lng != null) {
+          sumLat += apt.lat;
+          sumLng += apt.lng;
+        }
       }
       // 이 좌표에서 사용자가 벗어나면 선택을 푼다(onIdle 참조)
       areaCenterRef.current = n ? { lat: sumLat / n, lng: sumLng / n } : null;
@@ -681,7 +822,7 @@ export default function ComplexMap() {
         if (apt) extend(apt);
       }
     }
-    if (n >= 2) moveMap((m) => m.setBounds(bounds));
+    if (n >= 2) moveMap(m => m.setBounds(bounds));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kakao, aptScreen, aptComplexes, areaFilter]);
 
@@ -760,7 +901,9 @@ export default function ComplexMap() {
 
       {/* 좌표 없는 단지 안내 — 지도에서 빠진 만큼을 숨기지 않는다 */}
       {noCoordCount > 0 && (
-        <div className={s.noCoordChip}>좌표 없음 {noCoordCount.toLocaleString()}단지 제외</div>
+        <div className={s.noCoordChip}>
+          좌표 없음 {noCoordCount.toLocaleString()}단지 제외
+        </div>
       )}
 
       {/* 하단 범례 — 산식 설명은 ⓘ 툴팁으로 (한 줄 4개 정보는 과밀) */}
@@ -770,7 +913,7 @@ export default function ComplexMap() {
             <span className={s.legendLabel}>
               {formatSignalValue(legendData[0].value, aptScreen.signal)}
             </span>
-            {legendData.map((stop) => (
+            {legendData.map(stop => (
               <div
                 key={stop.value}
                 className={s.legendBox}
@@ -778,20 +921,28 @@ export default function ComplexMap() {
               />
             ))}
             <span className={s.legendLabel}>
-              {formatSignalValue(legendData[legendData.length - 1].value, aptScreen.signal)}
+              {formatSignalValue(
+                legendData[legendData.length - 1].value,
+                aptScreen.signal,
+              )}
             </span>
-            <span className={s.legendNote}>회색 = 거래 {aptScreen.minDeals}건 미만·데이터 부족</span>
+            <span className={s.legendNote}>
+              회색 = 거래 {aptScreen.minDeals}건 미만·데이터 부족
+            </span>
             {/* title 툴팁은 마우스에만 있다 — 터치·키보드에서도 열리도록 버튼 토글로 */}
             <button
               type="button"
               className={s.legendInfo}
               aria-expanded={infoOpen}
               aria-label="산식 설명"
-              onClick={() => setInfoOpen((v) => !v)}
-            >ⓘ</button>
+              onClick={() => setInfoOpen(v => !v)}
+            >
+              ⓘ
+            </button>
             {infoOpen && (
               <span className={s.legendNote}>
-                {aptScreen.dealType === 'rent' ? '전세' : '매매'} 평당가 중앙값 · 기준월 = 3개월 전 (신고지연 30일 보정)
+                {aptScreen.dealType === 'rent' ? '전세' : '매매'} 평당가 중앙값
+                · 기준월 = 3개월 전 (신고지연 30일 보정)
               </span>
             )}
           </div>

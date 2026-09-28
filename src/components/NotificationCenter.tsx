@@ -10,7 +10,9 @@ import s from './NotificationCenter.module.css';
 
 /** prefers-reduced-motion 감지 후 애니메이션 설정을 조정하는 훅 */
 function useMotionVariant(variants: any, transition: any = {}) {
-  const shouldReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const shouldReduce = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
   return {
     initial: shouldReduce ? {} : variants.initial,
     animate: shouldReduce ? {} : variants.animate,
@@ -30,7 +32,10 @@ function Signal() {
 }
 
 /** 아이콘은 lucide — 이모지는 OS·폰트마다 모양이 달라 다크 터미널 톤과 어긋난다(PULSE 컨벤션). */
-function getIconAndLabel(kind: AppNotification['kind']): { icon: ReactNode; label: string } {
+function getIconAndLabel(kind: AppNotification['kind']): {
+  icon: ReactNode;
+  label: string;
+} {
   const size = 17;
   switch (kind) {
     case 'price':
@@ -51,9 +56,9 @@ function NotificationItem({
   notification: AppNotification;
   onClose: () => void;
 }) {
-  const selectStock = useStore((st) => st.selectStock);
-  const setTab = useStore((st) => st.setTab);
-  const markNotificationRead = useStore((st) => st.markNotificationRead);
+  const selectStock = useStore(st => st.selectStock);
+  const setTab = useStore(st => st.setTab);
+  const markNotificationRead = useStore(st => st.markNotificationRead);
 
   const { icon, label } = getIconAndLabel(notification.kind);
 
@@ -72,8 +77,12 @@ function NotificationItem({
   };
 
   const motionProps = useMotionVariant(
-    { initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: 20 } },
-    { duration: 0.2 }
+    {
+      initial: { opacity: 0, x: 20 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: 20 },
+    },
+    { duration: 0.2 },
   );
 
   return (
@@ -100,10 +109,10 @@ export default function NotificationCenter({
   open,
   onOpenChange,
 }: NotificationCenterProps) {
-  const notifications = useStore((st) => st.notifications);
-  const markAllNotificationsRead = useStore((st) => st.markAllNotificationsRead);
+  const notifications = useStore(st => st.notifications);
+  const markAllNotificationsRead = useStore(st => st.markAllNotificationsRead);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -131,12 +140,16 @@ export default function NotificationCenter({
 
   const backdropMotion = useMotionVariant(
     { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
-    { duration: 0.2 }
+    { duration: 0.2 },
   );
 
   const drawerMotion = useMotionVariant(
-    { initial: { opacity: 0, x: '100%' }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: '100%' } },
-    { type: 'spring', stiffness: 300, damping: 30 }
+    {
+      initial: { opacity: 0, x: '100%' },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: '100%' },
+    },
+    { type: 'spring', stiffness: 300, damping: 30 },
   );
 
   return (
@@ -149,10 +162,7 @@ export default function NotificationCenter({
             onClick={handleBackdropClick}
             {...backdropMotion}
           />
-          <motion.div
-            className={s.drawer}
-            {...drawerMotion}
-          >
+          <motion.div className={s.drawer} {...drawerMotion}>
             <div className={s.header}>
               <div className={s.headerTitle}>
                 알림
@@ -176,7 +186,7 @@ export default function NotificationCenter({
                 <EmptyState title="알림이 없습니다" />
               ) : (
                 <AnimatePresence>
-                  {notifications.map((n) => (
+                  {notifications.map(n => (
                     <NotificationItem
                       key={n.id}
                       notification={n}

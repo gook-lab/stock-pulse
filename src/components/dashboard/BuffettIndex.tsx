@@ -12,19 +12,23 @@ import type { BuffettData, BuffettMarket } from '@/data/types';
  * 카드가 직접 가져온다. 첫 페인트를 ECOS·FRED 왕복만큼 늦출 이유가 없다.
  */
 export default function BuffettIndex() {
-  const refreshBuffett = useStore((st) => st.refreshBuffett);
+  const refreshBuffett = useStore(st => st.refreshBuffett);
   const [data, setData] = useState<BuffettData | null>(null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
     setFailed(false);
     setData(null);
-    refreshBuffett().then(setData).catch(() => setFailed(true));
+    refreshBuffett()
+      .then(setData)
+      .catch(() => setFailed(true));
   }, [refreshBuffett]);
 
   useEffect(load, [load]);
 
-  const markets = data ? [data.kr, data.us].filter((m): m is BuffettMarket => m != null) : [];
+  const markets = data
+    ? [data.kr, data.us].filter((m): m is BuffettMarket => m != null)
+    : [];
 
   return (
     <section className="card">
@@ -43,7 +47,9 @@ export default function BuffettIndex() {
         />
       )}
 
-      {markets.map((m) => <MarketRow key={m.label} m={m} />)}
+      {markets.map(m => (
+        <MarketRow key={m.label} m={m} />
+      ))}
     </section>
   );
 }
@@ -57,27 +63,66 @@ function MarketRow({ m }: { m: BuffettMarket }) {
 
   return (
     <div style={{ padding: '10px 0', borderTop: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}
+      >
         <span style={{ fontSize: 13, fontWeight: 600 }}>{m.label}</span>
-        <span className="mono" style={{ fontSize: 20, fontWeight: 700, color: accent }}>
+        <span
+          className="mono"
+          style={{ fontSize: 20, fontWeight: 700, color: accent }}
+        >
           {m.ratio.toFixed(1)}%
         </span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 2, fontSize: 11, color: 'var(--text-sub)' }}>
-        <span className="mono">{fmtTril(m.cap, m.currency)} ÷ {fmtTril(m.gdp, m.currency)}</span>
-        {pct && <span style={{ color: hot ? 'var(--warn)' : 'var(--text-sub)' }}>{pct}</span>}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 8,
+          marginTop: 2,
+          fontSize: 11,
+          color: 'var(--text-sub)',
+        }}
+      >
+        <span className="mono">
+          {fmtTril(m.cap, m.currency)} ÷ {fmtTril(m.gdp, m.currency)}
+        </span>
+        {pct && (
+          <span style={{ color: hot ? 'var(--warn)' : 'var(--text-sub)' }}>
+            {pct}
+          </span>
+        )}
       </div>
 
       {geo && (
         <div style={{ marginTop: 8 }}>
           {/* 절대 임계값(<75% 저평가 …)은 현재 구간에서 전부 '거품'으로 뭉개진다.
               대신 같은 시계열 10년 분포 안의 위치를 보여준다. */}
-          <div style={{ position: 'relative', height: 6, borderRadius: 3, background: 'var(--row)' }}>
+          <div
+            style={{
+              position: 'relative',
+              height: 6,
+              borderRadius: 3,
+              background: 'var(--row)',
+            }}
+          >
             {geo.median != null && (
               <div
                 title="10년 중앙값"
-                style={{ position: 'absolute', left: `${geo.median}%`, top: -2, width: 1, height: 10, background: 'var(--text-mut)' }}
+                style={{
+                  position: 'absolute',
+                  left: `${geo.median}%`,
+                  top: -2,
+                  width: 1,
+                  height: 10,
+                  background: 'var(--text-mut)',
+                }}
               />
             )}
             {/* left 를 애니메이션하면 매 프레임 레이아웃이 다시 계산된다.
@@ -89,27 +134,57 @@ function MarketRow({ m }: { m: BuffettMarket }) {
               animate={{ opacity: 1, x: `${geo.current}%` }}
               transition={{ duration: 0.4 }}
               style={{
-                position: 'absolute', left: 0, top: -2, width: '100%', height: 10,
+                position: 'absolute',
+                left: 0,
+                top: -2,
+                width: '100%',
+                height: 10,
                 pointerEvents: 'none',
               }}
             >
               <div
                 style={{
-                  position: 'absolute', left: 0, top: 0, width: 10, height: 10, marginLeft: -5,
-                  borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}`,
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: 10,
+                  height: 10,
+                  marginLeft: -5,
+                  borderRadius: '50%',
+                  background: accent,
+                  boxShadow: `0 0 6px ${accent}`,
                 }}
               />
             </motion.div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'var(--text-sub)' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: 4,
+              fontSize: 10,
+              color: 'var(--text-sub)',
+            }}
+          >
             <span className="mono">{m.min?.toFixed(0)}%</span>
-            <span>중앙 {m.median?.toFixed(0)}% · {fmtAsOf(m)}</span>
+            <span>
+              중앙 {m.median?.toFixed(0)}% · {fmtAsOf(m)}
+            </span>
             <span className="mono">{m.max?.toFixed(0)}%</span>
           </div>
         </div>
       )}
 
-      <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-sub)', lineHeight: 1.4 }}>{m.note}</div>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 10,
+          color: 'var(--text-sub)',
+          lineHeight: 1.4,
+        }}
+      >
+        {m.note}
+      </div>
     </div>
   );
 }

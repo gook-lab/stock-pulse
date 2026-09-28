@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  calcMinMax,
-  pathFromData,
-} from '../PriceChart.helpers';
+import { calcMinMax, pathFromData } from '../PriceChart.helpers';
 
 describe('compareSeries helpers', () => {
   describe('calcMinMax', () => {
@@ -19,7 +16,7 @@ describe('compareSeries helpers', () => {
         { name: 'compare1', data: [50, 400, 200], color: '#FF0000' },
       ];
       const result = calcMinMax(data, compareSeries);
-      expect(result.min).toBe(50);  // compareSeries의 최솟값
+      expect(result.min).toBe(50); // compareSeries의 최솟값
       expect(result.max).toBe(400); // compareSeries의 최댓값
     });
 
@@ -66,8 +63,8 @@ describe('compareSeries helpers', () => {
 
     it('정상 데이터로 경로 생성', () => {
       const path = pathFromData(config);
-      expect(path).toContain('M');  // 시작
-      expect(path).toContain('L');  // 라인
+      expect(path).toContain('M'); // 시작
+      expect(path).toContain('L'); // 라인
       expect(path.length).toBeGreaterThan(0);
     });
 

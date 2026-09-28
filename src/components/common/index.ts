@@ -10,5 +10,8 @@ export { default as MarketChip } from './MarketChip';
 export { default as ReasonList } from './ReasonList';
 export { default as Modal } from './Modal';
 export { default as ConfirmDialog } from './ConfirmDialog';
-export { default as PriceChart, type Period as PriceChartPeriod } from './PriceChart';
+export {
+  default as PriceChart,
+  type Period as PriceChartPeriod,
+} from './PriceChart';
 export { VerticalBars, HorizontalBars, Bar, type BarDatum } from './BarChart';

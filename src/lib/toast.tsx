@@ -14,9 +14,24 @@ const STYLE: Record<ToastType, { color: string; icon: ReactNode }> = {
   info: { color: '#7C6CFF', icon: <Info size={20} /> },
 };
 
-interface ToastAction { label: string; onClick: () => void }
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
 
-function ToastCard({ t, type, title, message, action }: { t: Toast; type: ToastType; title?: string; message: string; action?: ToastAction }) {
+function ToastCard({
+  t,
+  type,
+  title,
+  message,
+  action,
+}: {
+  t: Toast;
+  type: ToastType;
+  title?: string;
+  message: string;
+  action?: ToastAction;
+}) {
   const st = STYLE[type];
   return (
     <AnimatePresence>
@@ -27,17 +42,31 @@ function ToastCard({ t, type, title, message, action }: { t: Toast; type: ToastT
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
           transition={{ type: 'spring', stiffness: 500, damping: 34 }}
-          className="pointer-events-auto flex items-start gap-3 border border-line px-4 py-3 min-w-[240px] max-w-[380px]"
-          style={{ background: '#141924', borderRadius: 11, borderLeft: `3px solid ${st.color}`, boxShadow: '0 8px 28px -6px rgba(0,0,0,.6)' }}
+          className="pointer-events-auto flex min-w-[240px] max-w-[380px] items-start gap-3 border border-line px-4 py-3"
+          style={{
+            background: '#141924',
+            borderRadius: 11,
+            borderLeft: `3px solid ${st.color}`,
+            boxShadow: '0 8px 28px -6px rgba(0,0,0,.6)',
+          }}
         >
-          <span style={{ color: st.color }} className="mt-[1px] shrink-0">{st.icon}</span>
+          <span style={{ color: st.color }} className="mt-[1px] shrink-0">
+            {st.icon}
+          </span>
           <div className="min-w-0 flex-1">
-            {title && <div className="text-[13px] font-bold text-fg leading-tight">{title}</div>}
-            <div className="text-[12.5px] text-sub leading-snug">{message}</div>
+            {title && (
+              <div className="text-[13px] font-bold leading-tight text-fg">
+                {title}
+              </div>
+            )}
+            <div className="text-[12.5px] leading-snug text-sub">{message}</div>
           </div>
           {action && (
             <button
-              onClick={() => { action.onClick(); hotToast.dismiss(t.id); }}
+              onClick={() => {
+                action.onClick();
+                hotToast.dismiss(t.id);
+              }}
               className="shrink-0 self-center rounded-lg border border-line bg-panel2 px-2.5 py-1 text-[11.5px] font-bold text-fg hover:border-brand"
             >
               {action.label}
@@ -57,11 +86,26 @@ interface ToastOptions {
   action?: ToastAction;
 }
 
-const show = (type: ToastType, { title, message, duration = 2400, id, action }: ToastOptions) => {
+const show = (
+  type: ToastType,
+  { title, message, duration = 2400, id, action }: ToastOptions,
+) => {
   if (id) hotToast.dismiss(id);
-  return hotToast.custom((t) => <ToastCard t={t} type={type} title={title} message={message} action={action} />, {
-    duration, id: id || undefined,
-  });
+  return hotToast.custom(
+    t => (
+      <ToastCard
+        t={t}
+        type={type}
+        title={title}
+        message={message}
+        action={action}
+      />
+    ),
+    {
+      duration,
+      id: id || undefined,
+    },
+  );
 };
 
 const toast = {

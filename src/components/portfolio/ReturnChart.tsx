@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import PriceChart, { type Period } from '@/components/common/PriceChart';
-import { CardSkeleton, EmptyState, ErrorState, Segmented } from '@/components/common';
+import {
+  CardSkeleton,
+  EmptyState,
+  ErrorState,
+  Segmented,
+} from '@/components/common';
 import { calculateReturns, calculateExcessReturn } from '@/lib/returns';
 import { signColor, fmt } from '@/lib/colors';
 import { useStore } from '@/store/useStore';
@@ -17,7 +22,7 @@ const PERIOD_OPTIONS = [
 type DayCountStr = '22' | '66' | '250' | '0';
 
 export default function ReturnChart() {
-  const mode = useStore((st) => st.colorMode);
+  const mode = useStore(st => st.colorMode);
   const [dayCountStr, setDayCountStr] = useState<DayCountStr>('66'); // 3개월 기본
   const dayCount = parseInt(dayCountStr, 10);
   const [entries, setEntries] = useState<PortfolioHistoryEntry[] | null>(null);
@@ -63,7 +68,9 @@ export default function ReturnChart() {
   const excessSpx = calculateExcessReturn(lastMyReturn, lastSpxReturn);
 
   // compareSeries 구성
-  const compareSeries = useMemo((): Partial<Record<Period, CompareSeries[]>> => {
+  const compareSeries = useMemo((): Partial<
+    Record<Period, CompareSeries[]>
+  > => {
     const series: CompareSeries[] = [];
     if (returns.kospi.length > 0) {
       series.push({
@@ -86,7 +93,9 @@ export default function ReturnChart() {
   if (loading) {
     return (
       <section className="card">
-        <div className="card-h"><span className="t">수익률 비교</span></div>
+        <div className="card-h">
+          <span className="t">수익률 비교</span>
+        </div>
         <CardSkeleton height={280} />
       </section>
     );
@@ -96,7 +105,9 @@ export default function ReturnChart() {
   if (error) {
     return (
       <section className="card">
-        <div className="card-h"><span className="t">수익률 비교</span></div>
+        <div className="card-h">
+          <span className="t">수익률 비교</span>
+        </div>
         <ErrorState
           title="데이터 로드 실패"
           desc={error}
@@ -108,18 +119,18 @@ export default function ReturnChart() {
 
   // 데이터 부족 상태 (2개 미만)
   if (displayEntries.length < 2) {
-    const firstDate = entries?.[0]?.date ?? new Date().toISOString().split('T')[0];
+    const firstDate =
+      entries?.[0]?.date ?? new Date().toISOString().split('T')[0];
     const hint =
       entries?.length === 0
         ? '서버가 켜져 있는 동안 매일 자동 기록됩니다'
         : `수집 시작: ${firstDate}`;
     return (
       <section className="card">
-        <div className="card-h"><span className="t">수익률 비교</span></div>
-        <EmptyState
-          title="수익률 이력 수집 중"
-          desc={hint}
-        />
+        <div className="card-h">
+          <span className="t">수익률 비교</span>
+        </div>
+        <EmptyState title="수익률 이력 수집 중" desc={hint} />
       </section>
     );
   }
@@ -131,33 +142,75 @@ export default function ReturnChart() {
         <Segmented
           options={PERIOD_OPTIONS}
           value={dayCountStr}
-          onChange={(v) => setDayCountStr(v as DayCountStr)}
+          onChange={v => setDayCountStr(v as DayCountStr)}
         />
       </div>
 
       {/* 헤더: 기간 수익률 + 초과수익 */}
-      <div style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap', fontSize: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 24,
+          marginBottom: 16,
+          flexWrap: 'wrap',
+          fontSize: 12,
+        }}
+      >
         <div>
-          <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>내 수익률</div>
-          <div style={{ fontSize: 18, fontWeight: 600, fontFamily: 'var(--mono)', color: lastMyReturn != null && lastMyReturn !== 0 ? signColor(lastMyReturn, mode) : 'var(--text)' }}>
-            {lastMyReturn != null ? `${lastMyReturn >= 0 ? '+' : ''}${fmt(lastMyReturn, 2)}%` : '—'}
+          <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>
+            내 수익률
+          </div>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              fontFamily: 'var(--mono)',
+              color:
+                lastMyReturn != null && lastMyReturn !== 0
+                  ? signColor(lastMyReturn, mode)
+                  : 'var(--text)',
+            }}
+          >
+            {lastMyReturn != null
+              ? `${lastMyReturn >= 0 ? '+' : ''}${fmt(lastMyReturn, 2)}%`
+              : '—'}
           </div>
         </div>
 
         {excessKospi != null && (
           <div>
-            <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>KOSPI 초과수익</div>
-            <div style={{ fontSize: 18, fontWeight: 600, fontFamily: 'var(--mono)', color: excessKospi >= 0 ? 'var(--text)' : 'var(--text-sub)' }}>
-              {excessKospi >= 0 ? '+' : ''}{fmt(excessKospi, 2)}%p
+            <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>
+              KOSPI 초과수익
+            </div>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                fontFamily: 'var(--mono)',
+                color: excessKospi >= 0 ? 'var(--text)' : 'var(--text-sub)',
+              }}
+            >
+              {excessKospi >= 0 ? '+' : ''}
+              {fmt(excessKospi, 2)}%p
             </div>
           </div>
         )}
 
         {excessSpx != null && (
           <div>
-            <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>S&P 초과수익</div>
-            <div style={{ fontSize: 18, fontWeight: 600, fontFamily: 'var(--mono)', color: excessSpx >= 0 ? 'var(--text)' : 'var(--text-sub)' }}>
-              {excessSpx >= 0 ? '+' : ''}{fmt(excessSpx, 2)}%p
+            <div style={{ color: 'var(--text-mut)', marginBottom: 4 }}>
+              S&P 초과수익
+            </div>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                fontFamily: 'var(--mono)',
+                color: excessSpx >= 0 ? 'var(--text)' : 'var(--text-sub)',
+              }}
+            >
+              {excessSpx >= 0 ? '+' : ''}
+              {fmt(excessSpx, 2)}%p
             </div>
           </div>
         )}
@@ -169,7 +222,12 @@ export default function ReturnChart() {
         code="PORTFOLIO"
         cur="%"
         dec={2}
-        series={{ '1개월': returns.my, '3개월': returns.my, '1년': returns.my, '5년': returns.my }}
+        series={{
+          '1개월': returns.my,
+          '3개월': returns.my,
+          '1년': returns.my,
+          '5년': returns.my,
+        }}
         compareSeries={compareSeries}
         mode={mode}
         defaultPeriod="3개월"

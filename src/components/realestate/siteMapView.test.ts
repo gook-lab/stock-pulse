@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  cellBudget, levelOfDetail, clampZoom, dragMode, dragZoomFactor, boxesOverlap, dedupePois,
+  cellBudget,
+  levelOfDetail,
+  clampZoom,
+  dragMode,
+  dragZoomFactor,
+  boxesOverlap,
+  dedupePois,
 } from './siteMapView';
 
 describe('clampZoom — 배율 한계', () => {
@@ -64,8 +70,9 @@ describe('levelOfDetail — 축소하면 덜 그린다', () => {
 
   it('축소할수록 최소 면적 기준이 커진다(단조)', () => {
     const zooms = [0.3, 0.5, 0.8, 1.5];
-    const areas = zooms.map((z) => levelOfDetail(z).minArea);
-    for (let i = 1; i < areas.length; i++) expect(areas[i]).toBeLessThanOrEqual(areas[i - 1]);
+    const areas = zooms.map(z => levelOfDetail(z).minArea);
+    for (let i = 1; i < areas.length; i++)
+      expect(areas[i]).toBeLessThanOrEqual(areas[i - 1]);
   });
 });
 
@@ -139,30 +146,49 @@ describe('boxesOverlap — 라벨 겹침 판정', () => {
   });
 
   it('대칭이다', () => {
-    expect(boxesOverlap(b(0, 0), b(15, 5))).toBe(boxesOverlap(b(15, 5), b(0, 0)));
+    expect(boxesOverlap(b(0, 0), b(15, 5))).toBe(
+      boxesOverlap(b(15, 5), b(0, 0)),
+    );
   });
 });
 
 describe('dedupePois — 여러 칸에서 온 같은 시설 합치기', () => {
-  const poi = (kind: any, name: string | null, x: number, y: number) => ({ kind, name, x, y });
+  const poi = (kind: any, name: string | null, x: number, y: number) => ({
+    kind,
+    name,
+    x,
+    y,
+  });
 
   it('같은 종류·이름이 가까우면 하나로 — 인접 칸이 겹쳐 주는 경우', () => {
-    const out = dedupePois([poi('school', '중앙초', 0, 0), poi('school', '중앙초', 10, 10)]);
+    const out = dedupePois([
+      poi('school', '중앙초', 0, 0),
+      poi('school', '중앙초', 10, 10),
+    ]);
     expect(out).toHaveLength(1);
   });
 
   it('이름이 같아도 멀면 다른 시설이다', () => {
-    const out = dedupePois([poi('school', '중앙초', 0, 0), poi('school', '중앙초', 500, 0)]);
+    const out = dedupePois([
+      poi('school', '중앙초', 0, 0),
+      poi('school', '중앙초', 500, 0),
+    ]);
     expect(out).toHaveLength(2);
   });
 
   it('종류가 다르면 같은 자리라도 남긴다 — 역 위 상가 같은 경우', () => {
-    const out = dedupePois([poi('station', '상도', 0, 0), poi('mart', '상도', 0, 0)]);
+    const out = dedupePois([
+      poi('station', '상도', 0, 0),
+      poi('mart', '상도', 0, 0),
+    ]);
     expect(out).toHaveLength(2);
   });
 
   it('먼저 온 것을 남긴다 — 단지 payload 가 셀보다 앞선다', () => {
-    const out = dedupePois([poi('park', '공원', 0, 0), poi('park', '공원', 5, 5)]);
+    const out = dedupePois([
+      poi('park', '공원', 0, 0),
+      poi('park', '공원', 5, 5),
+    ]);
     expect(out[0].x).toBe(0);
   });
 

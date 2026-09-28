@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { Badge, Button, EmptyState, SkeletonText, PriceChart, HorizontalBars, Segmented } from '@/components/common';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  SkeletonText,
+  PriceChart,
+  HorizontalBars,
+  Segmented,
+} from '@/components/common';
 import toast from '@/lib/toast';
 import { httpApi } from '@/data/httpApi';
 import type { AptComplexDetail, SignalKey, AreaTier } from '@/data/types';
@@ -17,12 +25,16 @@ interface ComplexDetailBodyProps {
 }
 
 /** 단지 상세 내용 — 전체 화면 뷰가 감싼다. */
-function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetailBodyProps) {
-  const screenerQuery = useStore((st) => st.screenerQuery);
-  const aptScreen = useStore((st) => st.aptScreen);
-  const colorMode = useStore((st) => st.colorMode);
-  const aptWatchlist = useStore((st) => st.aptWatchlist);
-  const toggleAptWatch = useStore((st) => st.toggleAptWatch);
+function ComplexDetailBody({
+  detail,
+  selectedArea,
+  onSelectArea,
+}: ComplexDetailBodyProps) {
+  const screenerQuery = useStore(st => st.screenerQuery);
+  const aptScreen = useStore(st => st.aptScreen);
+  const colorMode = useStore(st => st.colorMode);
+  const aptWatchlist = useStore(st => st.aptWatchlist);
+  const toggleAptWatch = useStore(st => st.toggleAptWatch);
 
   const [deals, setDeals] = useState<any[]>([]);
   const [dealsLoading, setDealsLoading] = useState(false);
@@ -33,16 +45,19 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
   useEffect(() => {
     setDealsLoading(true);
     setDealsError(null);
-    httpApi.getComplexDeals(detail.aptSeq)
-      .then((result) => {
-        setDeals(result.deals.sort((a, b) => {
-          const cmp = b.ym.localeCompare(a.ym);
-          return cmp !== 0 ? cmp : (b.day ?? 0) - (a.day ?? 0);
-        }));
+    httpApi
+      .getComplexDeals(detail.aptSeq)
+      .then(result => {
+        setDeals(
+          result.deals.sort((a, b) => {
+            const cmp = b.ym.localeCompare(a.ym);
+            return cmp !== 0 ? cmp : (b.day ?? 0) - (a.day ?? 0);
+          }),
+        );
         setDealsStale(result.stale ?? false);
         setDealsLoading(false);
       })
-      .catch((e) => {
+      .catch(e => {
         setDealsError(String((e as Error)?.message || e));
         setDealsLoading(false);
       });
@@ -57,26 +72,42 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
     key === 'jeonseRatio' ? detail.signals.jeonseRatio : currentSignals[key];
   const signalValue = valueOf(signal);
 
-  const rank = aptScreen?.ranked.find((r) => r.id === detail.aptSeq);
-  const rankText = rank && aptScreen
-    ? `${rank.rank}위 / ${aptScreen.ranked.length}개`
-    : `순위 밖 — 조건 미충족`;
+  const rank = aptScreen?.ranked.find(r => r.id === detail.aptSeq);
+  const rankText =
+    rank && aptScreen
+      ? `${rank.rank}위 / ${aptScreen.ranked.length}개`
+      : `순위 밖 — 조건 미충족`;
 
   const timeseriesData = detail.series[dealType === 'trade' ? 't' : 'r'];
   const seriesValues = timeseriesData.map(([price]) => price);
   // 거래 없는 달은 0 이 아니라 null — 0 은 막대로 그릴 값이 아니다(가격 계열과 같은 규칙).
-  const volumesValues = timeseriesData.map(([, count]) => (count > 0 ? count : null));
+  const volumesValues = timeseriesData.map(([, count]) =>
+    count > 0 ? count : null,
+  );
   const provisionalFrom = Math.max(0, timeseriesData.length - 2);
   /* 추세선 — 월 1~2건인 달이 많아 월별 중앙값은 4,093 → 10,649 처럼 튄다.
      서버가 상세 응답에서 같은 정의(3개월 창의 모든 거래)로 계산해 준다. */
-  const smoothedValues = detail.smoothed?.[dealType === 'trade' ? 't' : 'r'] ?? null;
-  const trendSeries = smoothedValues?.some((v) => v != null)
-    ? [{ name: '3개월 이동 중앙값', data: smoothedValues, color: 'var(--text-sub)', width: 1.6, dash: '8 5' }]
+  const smoothedValues =
+    detail.smoothed?.[dealType === 'trade' ? 't' : 'r'] ?? null;
+  const trendSeries = smoothedValues?.some(v => v != null)
+    ? [
+        {
+          name: '3개월 이동 중앙값',
+          data: smoothedValues,
+          color: 'var(--text-sub)',
+          width: 1.6,
+          dash: '8 5',
+        },
+      ]
     : [];
 
   // 기준월 평당가 — 시그널 계산과 같은 규칙(기준월 = 3개월 전, 거래 없는 달은 직전 유효값)
   const basisPrice = (() => {
-    for (let i = Math.min(detail.months.length - 3, timeseriesData.length - 1); i >= 0; i--) {
+    for (
+      let i = Math.min(detail.months.length - 3, timeseriesData.length - 1);
+      i >= 0;
+      i--
+    ) {
       const p = timeseriesData[i]?.[0];
       if (p != null) return Math.round(p);
     }
@@ -102,7 +133,9 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
   const formatSignal = (key: SignalKey, v: number | null): string => {
     if (v == null) return '—';
     switch (key) {
-      case 'momentum3': case 'momentum6': case 'momentum12':
+      case 'momentum3':
+      case 'momentum6':
+      case 'momentum12':
         return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
       case 'high52wPct':
         return v === 0 ? '신고가' : `${v.toFixed(1)}%`;
@@ -124,19 +157,22 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
     jeonseRatio: '전세가율',
     rs: '상대강도',
   };
-  const gridSignals = (Object.keys(signalLabels) as SignalKey[]).map((key) => ({
+  const gridSignals = (Object.keys(signalLabels) as SignalKey[]).map(key => ({
     key,
-    label: key === 'jeonseRatio' && detail.signals.jeonseRatioTier
-      ? `전세가율 · ${detail.signals.jeonseRatioTier}㎡`
-      : signalLabels[key],
+    label:
+      key === 'jeonseRatio' && detail.signals.jeonseRatioTier
+        ? `전세가율 · ${detail.signals.jeonseRatioTier}㎡`
+        : signalLabels[key],
   }));
 
   const dealTypeLabel = dealType === 'trade' ? '매매' : '전세/월세';
-  const buildYearText = detail.buildYear ? `${detail.buildYear}년 준공` : '준공연도 미상';
+  const buildYearText = detail.buildYear
+    ? `${detail.buildYear}년 준공`
+    : '준공연도 미상';
 
   // ──── 평형 탭 ────
   const areaTiers: AreaTier[] = ['~60', '60~85', '85~135', '135~'];
-  const availableTiers = areaTiers.filter((tier) => {
+  const availableTiers = areaTiers.filter(tier => {
     const tierData = detail.tiers[tier];
     if (!tierData) return false;
     const prices = dealType === 'trade' ? tierData.t : tierData.r;
@@ -159,7 +195,11 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           <button
             onClick={() => toggleAptWatch(detail.aptSeq)}
             className={`${s.watchBtn} ${aptWatchlist.includes(detail.aptSeq) ? s.watchBtnActive : ''}`}
-            title={aptWatchlist.includes(detail.aptSeq) ? '워치리스트에서 제거' : '워치리스트에 추가'}
+            title={
+              aptWatchlist.includes(detail.aptSeq)
+                ? '워치리스트에서 제거'
+                : '워치리스트에 추가'
+            }
             aria-pressed={aptWatchlist.includes(detail.aptSeq)}
             aria-label="관심단지 담기"
           >
@@ -172,7 +212,9 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           {detail.lat == null && <Badge>좌표없음</Badge>}
         </div>
         <div className={s.subline}>
-          <span>{detail.gu} {detail.umdNm}</span>
+          <span>
+            {detail.gu} {detail.umdNm}
+          </span>
           <span>·</span>
           <span>{detail.roadnm}</span>
           <span>·</span>
@@ -184,14 +226,20 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
       <div className={s.signalSection}>
         <div className={s.currentSignal}>
           <span className={s.signalLabel}>{signalLabels[signal]}</span>
-          <div className={s.signalValue} style={{
-            color: scaleColor(signalValue, signalDomain, colorMode),
-          }}>
+          <div
+            className={s.signalValue}
+            style={{
+              color: scaleColor(signalValue, signalDomain, colorMode),
+            }}
+          >
             {formatSignal(signal, signalValue)}
           </div>
           <div className={s.rankText}>{rankText}</div>
           <div className={s.rankText}>
-            기준월 평당가 <span className="mono">{basisPrice != null ? `${fmt(basisPrice, 0)}만` : '—'}</span>
+            기준월 평당가{' '}
+            <span className="mono">
+              {basisPrice != null ? `${fmt(basisPrice, 0)}만` : '—'}
+            </span>
           </div>
         </div>
 
@@ -203,7 +251,9 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
                 <div className={s.gridLabel}>{label}</div>
                 <div
                   className={s.gridValue}
-                  style={{ color: scaleColor(v, SIGNAL_DOMAIN[key], colorMode) }}
+                  style={{
+                    color: scaleColor(v, SIGNAL_DOMAIN[key], colorMode),
+                  }}
                 >
                   {formatSignal(key, v)}
                 </div>
@@ -212,9 +262,7 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           })}
         </div>
 
-        <div className={s.dealCount}>
-          {dealCount}건 거래
-        </div>
+        <div className={s.dealCount}>{dealCount}건 거래</div>
       </div>
 
       {/* ③ PriceChart (기존) */}
@@ -226,7 +274,9 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           dec={0}
           series={{ '1년': seriesValues }}
           volumes={{ '1년': volumesValues }}
-          labels={{ '1년': detail.months.map((m) => `${m.slice(2, 4)}.${m.slice(4)}`) }}
+          labels={{
+            '1년': detail.months.map(m => `${m.slice(2, 4)}.${m.slice(4)}`),
+          }}
           compareSeries={{ '1년': trendSeries }}
           mode={colorMode}
           defaultPeriod="1년"
@@ -236,7 +286,8 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           singlePointNote="거래가 한 달에만 있어 추세를 그릴 수 없습니다 · 점 하나가 그 달의 값입니다"
         />
         <div className={s.chartCaption}>
-          {dealTypeLabel} 평당가(만원) · 최근 2개월은 신고지연으로 미확정{detail.outliers ? ` · 이상치 제외 ${detail.outliers}건` : ''}
+          {dealTypeLabel} 평당가(만원) · 최근 2개월은 신고지연으로 미확정
+          {detail.outliers ? ` · 이상치 제외 ${detail.outliers}건` : ''}
         </div>
       </div>
 
@@ -245,9 +296,20 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
         <div className={s.dealScatterSection}>
           <div className={s.sectionLabel}>평형대별 거래</div>
           <Segmented
-            options={availableTiers.map((tier) => ({ label: tier + '㎡', value: tier }))}
-            value={(selectedArea ? (Object.keys(tierAreas).find((k) => tierAreas[k as AreaTier] === selectedArea) as AreaTier) : availableTiers[0]) || availableTiers[0]}
-            onChange={(tier) => onSelectArea(tier ? tierAreas[tier as AreaTier] : null)}
+            options={availableTiers.map(tier => ({
+              label: tier + '㎡',
+              value: tier,
+            }))}
+            value={
+              (selectedArea
+                ? (Object.keys(tierAreas).find(
+                    k => tierAreas[k as AreaTier] === selectedArea,
+                  ) as AreaTier)
+                : availableTiers[0]) || availableTiers[0]
+            }
+            onChange={tier =>
+              onSelectArea(tier ? tierAreas[tier as AreaTier] : null)
+            }
           />
           <DealScatter
             deals={deals}
@@ -255,16 +317,20 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
             loading={dealsLoading}
             error={dealsError}
             stale={dealsStale}
-            onRetry={() => httpApi.getComplexDeals(detail.aptSeq)
-              .then((r) => {
-                setDeals(r.deals.sort((a, b) => {
-                  const cmp = b.ym.localeCompare(a.ym);
-                  return cmp !== 0 ? cmp : (b.day ?? 0) - (a.day ?? 0);
-                }));
-                setDealsStale(r.stale ?? false);
-                setDealsError(null);
-              })
-              .catch((e) => setDealsError(String((e as Error)?.message || e)))
+            onRetry={() =>
+              httpApi
+                .getComplexDeals(detail.aptSeq)
+                .then(r => {
+                  setDeals(
+                    r.deals.sort((a, b) => {
+                      const cmp = b.ym.localeCompare(a.ym);
+                      return cmp !== 0 ? cmp : (b.day ?? 0) - (a.day ?? 0);
+                    }),
+                  );
+                  setDealsStale(r.stale ?? false);
+                  setDealsError(null);
+                })
+                .catch(e => setDealsError(String((e as Error)?.message || e)))
             }
           />
         </div>
@@ -302,8 +368,13 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
           <div className={s.tiersLabel}>평형별 {dealTypeLabel} 평당가</div>
           <HorizontalBars
             data={tierBars}
-            highlight={tierBars.find((b) => detail.areaTier && b.label.startsWith(`${detail.areaTier}㎡`))?.label}
-            format={(v) => `${fmt(v, 0)}만/평`}
+            highlight={
+              tierBars.find(
+                b =>
+                  detail.areaTier && b.label.startsWith(`${detail.areaTier}㎡`),
+              )?.label
+            }
+            format={v => `${fmt(v, 0)}만/평`}
             labelWidth={110}
           />
         </div>
@@ -326,17 +397,23 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
             <tbody>
               {recentDeals.map((deal, i) => {
                 const ym = deal.ym.slice(0, 4) + '.' + deal.ym.slice(4);
-                const dateStr = deal.day ? `${ym}.${String(deal.day).padStart(2, '0')}` : ym;
-                const kindLabel = deal.kind === 'trade'
-                  ? '매매'
-                  : deal.monthlyRent && deal.monthlyRent > 0
-                    ? '월세'
-                    : '전세';
+                const dateStr = deal.day
+                  ? `${ym}.${String(deal.day).padStart(2, '0')}`
+                  : ym;
+                const kindLabel =
+                  deal.kind === 'trade'
+                    ? '매매'
+                    : deal.monthlyRent && deal.monthlyRent > 0
+                      ? '월세'
+                      : '전세';
                 const areaStr = deal.area ? deal.area.toFixed(1) : '—';
                 const floorStr = deal.floor ? String(deal.floor) : '—';
-                const priceStr = deal.kind === 'trade' || deal.monthlyRent === 0 || deal.monthlyRent == null
-                  ? `${fmt(deal.price, 0)}만`
-                  : `${fmt(deal.price, 0)}/${fmt(deal.monthlyRent, 0)}`;
+                const priceStr =
+                  deal.kind === 'trade' ||
+                  deal.monthlyRent === 0 ||
+                  deal.monthlyRent == null
+                    ? `${fmt(deal.price, 0)}만`
+                    : `${fmt(deal.price, 0)}/${fmt(deal.monthlyRent, 0)}`;
 
                 return (
                   <tr key={i} className={s.tr}>
@@ -362,8 +439,8 @@ function ComplexDetailBody({ detail, selectedArea, onSelectArea }: ComplexDetail
  * 시그널 라벨이 세로로 찌그러지고 차트가 읽히지 않는다(380px 시트에서 실제로 그랬다).
  */
 export default function ComplexDetail() {
-  const selectedComplexId = useStore((st) => st.selectedComplexId);
-  const selectComplex = useStore((st) => st.selectComplex);
+  const selectedComplexId = useStore(st => st.selectedComplexId);
+  const selectComplex = useStore(st => st.selectComplex);
 
   const [detail, setDetail] = useState<AptComplexDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -371,18 +448,29 @@ export default function ComplexDetail() {
   const reqId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!selectedComplexId) { reqId.current = null; return; }
+    if (!selectedComplexId) {
+      reqId.current = null;
+      return;
+    }
     const id = selectedComplexId;
     reqId.current = id;
     setLoading(true);
     setDetail(null);
     setSelectedArea(null);
-    httpApi.getAptComplex(id)
-      .then((d) => { if (reqId.current === id) { setDetail(d); setLoading(false); } })
-      .catch((e) => {
+    httpApi
+      .getAptComplex(id)
+      .then(d => {
+        if (reqId.current === id) {
+          setDetail(d);
+          setLoading(false);
+        }
+      })
+      .catch(e => {
         if (reqId.current !== id) return;
         setLoading(false);
-        toast.error({ message: `단지 상세 조회 실패: ${String((e as Error)?.message || e)}` });
+        toast.error({
+          message: `단지 상세 조회 실패: ${String((e as Error)?.message || e)}`,
+        });
       });
   }, [selectedComplexId]);
 
@@ -391,7 +479,9 @@ export default function ComplexDetail() {
   // 모달에서 Esc 로 닫던 습관을 그대로 — 전체 화면에서도 Esc 는 목록 복귀다.
   useEffect(() => {
     if (!selectedComplexId) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') selectComplex(null); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') selectComplex(null);
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedComplexId, selectComplex]);
@@ -401,7 +491,9 @@ export default function ComplexDetail() {
   return (
     <section className={s.pageWrap} aria-label="단지 상세">
       <div className={s.pageHead}>
-        <Button variant="subtle" size="sm" onClick={back}>← 스크리너로</Button>
+        <Button variant="subtle" size="sm" onClick={back}>
+          ← 스크리너로
+        </Button>
       </div>
       {loading ? (
         <SkeletonText lines={10} />
@@ -415,7 +507,11 @@ export default function ComplexDetail() {
         <EmptyState
           title="데이터 없음"
           desc="재건축이나 개명으로 인해 조회할 수 없는 단지입니다."
-          action={<Button variant="subtle" size="sm" onClick={back}>스크리너로 돌아가기</Button>}
+          action={
+            <Button variant="subtle" size="sm" onClick={back}>
+              스크리너로 돌아가기
+            </Button>
+          }
         />
       )}
     </section>

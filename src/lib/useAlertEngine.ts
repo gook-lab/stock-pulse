@@ -44,16 +44,33 @@ export function useAlertEngine() {
         // 알림이 없으면 조기 return (인터벌은 유지)
         if (currentAlerts.length === 0) return;
 
-        const krCodes = currentAlerts.filter((a) => a.market === 'KR').map((a) => a.code);
-        const usSymbols = currentAlerts.filter((a) => a.market === 'US').map((a) => a.code);
+        const krCodes = currentAlerts
+          .filter(a => a.market === 'KR')
+          .map(a => a.code);
+        const usSymbols = currentAlerts
+          .filter(a => a.market === 'US')
+          .map(a => a.code);
 
         // AbortSignal.timeout(15_000) 적용
         const abortSignal = AbortSignal.timeout(15_000);
 
-        const [krQuotes, usQuotes] = await Promise.all([
-          krCodes.length ? fetchQuotes(`/api/kr/quotes?codes=${krCodes.join(',')}`, abortSignal) : Promise.resolve({}),
-          usSymbols.length ? fetchQuotes(`/api/us/quotes?symbols=${usSymbols.join(',')}`, abortSignal) : Promise.resolve({}),
-        ]) as [Record<string, { price: number; changePct: number } | null>, Record<string, { price: number; changePct: number } | null>];
+        const [krQuotes, usQuotes] = (await Promise.all([
+          krCodes.length
+            ? fetchQuotes(
+                `/api/kr/quotes?codes=${krCodes.join(',')}`,
+                abortSignal,
+              )
+            : Promise.resolve({}),
+          usSymbols.length
+            ? fetchQuotes(
+                `/api/us/quotes?symbols=${usSymbols.join(',')}`,
+                abortSignal,
+              )
+            : Promise.resolve({}),
+        ])) as [
+          Record<string, { price: number; changePct: number } | null>,
+          Record<string, { price: number; changePct: number } | null>,
+        ];
 
         // 성공 시 실패 카운터 리셋
         failureCount = 0;
@@ -63,7 +80,10 @@ export function useAlertEngine() {
         const alertsNow = useStore.getState().alerts;
 
         for (const alert of alertsNow) {
-          const quote = alert.market === 'KR' ? krQuotes?.[alert.code] : usQuotes?.[alert.code];
+          const quote =
+            alert.market === 'KR'
+              ? krQuotes?.[alert.code]
+              : usQuotes?.[alert.code];
           if (!quote) continue; // 시세 없으면 스킵
 
           if (evaluate(alert, quote)) {
@@ -129,7 +149,10 @@ export function useAlertEngine() {
   }, []);
 }
 
-function getConditionDesc(alert: PriceAlert, quote: { price: number; changePct: number }): string {
+function getConditionDesc(
+  alert: PriceAlert,
+  quote: { price: number; changePct: number },
+): string {
   switch (alert.kind) {
     case 'target-above':
       return `목표가 이상 도달 (${quote.price.toLocaleString()})`;

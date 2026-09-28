@@ -82,6 +82,7 @@ export default function Watchlist() {
   useEffect(() => {
     if (view !== 'rank') return;
     let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 순위 폴링 시작 시 이전 조건의 순위를 비운다 — 채움은 fetch 응답
     setRank(null);
     const load = () =>
       fetch(`/api/kr/rank?by=${by}&market=${market}&limit=50`)

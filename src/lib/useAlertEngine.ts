@@ -24,7 +24,6 @@ async function fetchQuotes(
  */
 export function useAlertEngine() {
   useEffect(() => {
-    let intervalId: number | undefined;
     let polling = false;
     let failureCount = 0;
     let failureToastShown = false;
@@ -129,7 +128,7 @@ export function useAlertEngine() {
     void poll();
 
     // 30초마다 폴링
-    intervalId = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       void poll();
     }, 30_000);
 

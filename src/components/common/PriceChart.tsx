@@ -21,9 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { calcMinMax, CompareSeries } from './PriceChart.helpers';
 import { brandWithAlpha, colors } from '../../lib/colors';
-
-export type Period = '1일' | '1주' | '1개월' | '3개월' | '1년' | '5년';
-export const PERIODS: Period[] = ['1일', '1주', '1개월', '3개월', '1년', '5년'];
+import { PERIODS, type Period } from './PriceChart.constants';
 
 export interface Candle {
   o: number;
@@ -128,20 +126,20 @@ export default function PriceChart({
   );
   const s0 = clampStart(Math.round(start));
 
-  // 기간 변경 시 초기화
-  useEffect(() => {
+  // 현재 period에 데이터가 없으면(종목 전환으로 기간 세트가 바뀐 경우) 가용 기간으로 보정.
+  if (!series[period]?.length) {
+    const a = PERIODS.find(p => series[p]?.length);
+    if (a && a !== period) setPeriod(a);
+  }
+
+  // 기간 변경 시 초기화 — 렌더 중에 조정해 이전 기간의 커서·줌이 한 프레임도 남지 않게 한다
+  const [prevPeriod, setPrevPeriod] = useState(period);
+  if (period !== prevPeriod) {
+    setPrevPeriod(period);
     setIdx(null);
     setZoom(1);
     setStart(0);
-  }, [period]);
-
-  // 현재 period에 데이터가 없으면(종목 전환으로 기간 세트가 바뀐 경우) 가용 기간으로 보정.
-  useEffect(() => {
-    if (!series[period]?.length) {
-      const a = PERIODS.find(p => series[p]?.length);
-      if (a && a !== period) setPeriod(a);
-    }
-  }, [series, period]);
+  }
 
   // 폭 측정
   useEffect(() => {
@@ -278,7 +276,7 @@ export default function PriceChart({
       return;
     }
     if (e.pointerType === 'mouse') {
-      panX.current != null ? doPan(e.clientX) : pick(e.clientX);
+      void (panX.current != null ? doPan(e.clientX) : pick(e.clientX));
     } else if (ptrs.current.size === 1) pick(e.clientX);
   };
   const endPointer = (e: React.PointerEvent) => {

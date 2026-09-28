@@ -54,6 +54,7 @@ export default function StockDetail() {
   const getStockInfo = useStore(st => st.getStockInfo);
   const [info, setInfo] = useState<StockInfo | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 외부 조회를 새로 시작하며 이전 종목 값을 비운다 — 채움은 비동기 응답
     setInfo(null);
     if (!isKR) return;
     let alive = true;
@@ -68,6 +69,7 @@ export default function StockDetail() {
   const getStockOpinion = useStore(st => st.getStockOpinion);
   const [opinion, setOpinion] = useState<StockOpinion | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종목 전환 시 외부 조회를 새로 시작하며 이전 종목 값을 비운다 — 채움은 비동기 응답
     setOpinion(null);
     if (!isKR) return;
     let alive = true;
@@ -80,17 +82,18 @@ export default function StockDetail() {
   }, [selectedCode, isKR, getStockOpinion]);
   const lastClose = chartAll.daily[chartAll.daily.length - 1]?.c;
   const [liveTrades, setLiveTrades] = useState<TradeTick[]>([]);
-  useEffect(() => {
-    setLiveTrades([]);
-  }, [selectedCode]);
   /** 호가창 클릭 → 주문 티켓 지정가 채움. seq로 같은 가격 재클릭도 전달된다. */
   const [pickedPrice, setPickedPrice] = useState<{
     price: number;
     seq: number;
   } | null>(null);
-  useEffect(() => {
+  // 종목이 바뀌면 이전 종목의 체결·호가 선택을 렌더 중에 바로 비운다(effect 로 비우면 한 프레임 남는다)
+  const [prevCode, setPrevCode] = useState(selectedCode);
+  if (selectedCode !== prevCode) {
+    setPrevCode(selectedCode);
+    setLiveTrades([]);
     setPickedPrice(null);
-  }, [selectedCode]);
+  }
   const pickPrice = (price: number) =>
     setPickedPrice(prev => ({ price, seq: (prev?.seq ?? 0) + 1 }));
 
@@ -139,6 +142,7 @@ export default function StockDetail() {
   }, [listTab]);
   useEffect(() => {
     if (rt.trade)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 실시간 체결 스트림(rt.trade)을 표시용 버퍼에 누적한다 — 외부 구독 값 동기화
       setLiveTrades(p =>
         [
           {

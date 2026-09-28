@@ -1,5 +1,10 @@
 import { useEffect, useCallback, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  type TargetAndTransition,
+  type Transition,
+} from 'framer-motion';
 import { TrendingUp, Building2, Bell, Inbox } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useModalOpenSignal } from '@/store/useModalStore';
@@ -9,7 +14,13 @@ import type { AppNotification } from '@/data/types';
 import s from './NotificationCenter.module.css';
 
 /** prefers-reduced-motion 감지 후 애니메이션 설정을 조정하는 훅 */
-function useMotionVariant(variants: any, transition: any = {}) {
+type MotionStates = {
+  initial: TargetAndTransition;
+  animate: TargetAndTransition;
+  exit: TargetAndTransition;
+};
+
+function useMotionVariant(variants: MotionStates, transition: Transition = {}) {
   const shouldReduce = window.matchMedia(
     '(prefers-reduced-motion: reduce)',
   ).matches;

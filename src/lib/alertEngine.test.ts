@@ -197,7 +197,7 @@ describe('alertEngine - evaluate', () => {
         code: '005930',
         name: 'Samsung',
         market: 'KR',
-        kind: 'invalid' as any,
+        kind: 'invalid' as unknown as PriceAlert['kind'],
         value: 100,
         createdAt: Date.now(),
       };

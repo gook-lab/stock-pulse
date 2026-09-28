@@ -24,6 +24,7 @@ export default function BuffettIndex() {
       .catch(() => setFailed(true));
   }, [refreshBuffett]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- 마운트 시 버핏지수 요청 시작 — 실패 플래그 초기화 후 응답은 비동기로 채운다
   useEffect(load, [load]);
 
   const markets = data

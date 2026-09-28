@@ -172,9 +172,21 @@ export default function ComplexSiteMap({
   });
   /** 방향키로 나가면 서버에서 받아오는 주변 격자 칸들. 단지 payload 와 합쳐 한 세계로 그린다. */
   const [cells, setCells] = useState<AreaCell[]>([]);
+  const [dragging, setDragging] = useState(false);
+  // 아래 단지 전환 effect 가 초기화하는 ref 들 — 사용보다 먼저 선언한다
+  const dragRef = useRef<{ x: number; y: number; button: number } | null>(null);
+  const missRef = useRef<{ x: number; y: number; until: number }[]>([]);
+  /** 동시에 받는 구역 수. 하나씩 받으면 0.3× 에서 40칸 채우는 데 3분이 넘는다(실측). */
+  const inFlightRef = useRef(0);
+  /** 받는 중인 지점들 — 동시 요청이 같은 칸을 겹쳐 받지 않게 "덮인 것"으로 친다. */
+  const pendingRef = useRef<{ x: number; y: number }[]>([]);
+  const abortRef = useRef(new Set<AbortController>());
+  /** 지금 보고 있는 단지. 응답이 도착했을 때 그 사이 단지가 바뀌지 않았는지 확인한다. */
+  const seqRef = useRef(aptSeq);
 
   useEffect(() => {
     let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 단지 전환 시 건물 조회를 새로 시작하며 로딩·에러를 초기화한다 — 채움은 비동기 응답
     setLoading(true);
     setError(null);
     /* 다른 단지를 열면 이전 주변은 **좌표계가 다르다**.
@@ -188,6 +200,7 @@ export default function ComplexSiteMap({
     missRef.current = [];
     setCells([]);
     setCam({ yaw: 0, pitch: PITCH_DEFAULT, panX: 0, panY: 0, zoom: 1 });
+
     dragRef.current = null; // 끌던 중에 단지가 바뀌면 그 드래그는 이어지면 안 된다
     setDragging(false);
     fetch(`/api/realestate/complex/buildings?id=${encodeURIComponent(aptSeq)}`)
@@ -587,7 +600,8 @@ export default function ComplexSiteMap({
         ))}
       </>
     );
-  }, [geom, gradPrefix]);
+    // lod.labels 가 빠져 있으면 줌으로 LOD 가 바뀌어도 층수 라벨이 다음 geom 변경까지 갱신되지 않는다
+  }, [geom, gradPrefix, lod.labels]);
 
   /**
    * 화면상 북쪽이 향하는 각도(CSS/SVG 회전용, 0 = 위).
@@ -609,6 +623,8 @@ export default function ComplexSiteMap({
     stepRef.current = ((geom?.span ?? 200) / cam.zoom) * PAN_PER_SEC;
   }, [geom, cam.zoom]);
 
+  // rAF 가 다음 프레임에 자기 자신을 다시 예약한다 — 선언 전 자기 참조 대신 ref 로 부른다
+  const flowRef = useRef<(ts: number) => void>(() => {});
   const flow = useCallback((ts: number) => {
     const dt = lastTsRef.current
       ? Math.min(0.05, (ts - lastTsRef.current) / 1000)
@@ -628,12 +644,15 @@ export default function ComplexSiteMap({
       }));
     }
     if (held.size) {
-      rafRef.current = requestAnimationFrame(flow);
+      rafRef.current = requestAnimationFrame(t => flowRef.current(t));
     } else {
       rafRef.current = null;
       lastTsRef.current = 0;
     }
   }, []);
+  useEffect(() => {
+    flowRef.current = flow;
+  }, [flow]);
 
   const startFlow = useCallback(() => {
     if (rafRef.current == null) rafRef.current = requestAnimationFrame(flow);
@@ -745,8 +764,6 @@ export default function ComplexSiteMap({
     },
     [],
   );
-  const dragRef = useRef<{ x: number; y: number; button: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.button !== 1 && e.button !== 2) return;
@@ -839,12 +856,7 @@ export default function ComplexSiteMap({
   const [streaming, setStreaming] = useState(false);
   const [streamErr, setStreamErr] = useState<string | null>(null);
   const cellSizeRef = useRef(200);
-  const missRef = useRef<{ x: number; y: number; until: number }[]>([]);
 
-  /** 동시에 받는 구역 수. 하나씩 받으면 0.3× 에서 40칸 채우는 데 3분이 넘는다(실측). */
-  const inFlightRef = useRef(0);
-  /** 받는 중인 지점들 — 동시 요청이 같은 칸을 겹쳐 받지 않게 "덮인 것"으로 친다. */
-  const pendingRef = useRef<{ x: number; y: number }[]>([]);
   /** 실패한 칸의 대기시간이 지나면 이 값이 바뀌어 스트리밍 훅을 다시 깨운다. */
   const [retryTick, setRetryTick] = useState(0);
   /** 재시도 예약 타이머 — 언마운트 시 취소해야 한다(20초짜리라 상세를 닫고 나가도 살아남는다). */
@@ -857,20 +869,18 @@ export default function ComplexSiteMap({
    * 그래서 **언마운트에서만** 끊고, 응답 처리 직전에 살아 있는지만 확인한다.
    */
   const aliveRef = useRef(true);
-  const abortRef = useRef(new Set<AbortController>());
-  /** 지금 보고 있는 단지. 응답이 도착했을 때 그 사이 단지가 바뀌지 않았는지 확인한다. */
-  const seqRef = useRef(aptSeq);
   useEffect(() => {
     /* 마운트마다 다시 true 로 되돌려야 한다.
        StrictMode(개발)는 mount → cleanup → mount 를 한 번 더 돈다. 정리에서 false 로만 두면
        두 번째 마운트에서 영영 false 로 남아 **받아온 구역을 전부 버린다**
        (실측 증상: 요청은 200 으로 오는데 화면은 계속 "주변 불러오는 중"). */
     aliveRef.current = true;
+    const abort = abortRef.current;
     return () => {
       aliveRef.current = false;
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-      abortRef.current.forEach(c => c.abort());
-      abortRef.current.clear();
+      abort.forEach(c => c.abort());
+      abort.clear();
     };
   }, []);
 
@@ -886,6 +896,7 @@ export default function ComplexSiteMap({
 
       const reqSeq = seqRef.current;
       const target = { x, y };
+
       pendingRef.current.push(target);
       inFlightRef.current += 1;
       setStreaming(true);

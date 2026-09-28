@@ -9,7 +9,7 @@ import {
   MUTED,
 } from '@/lib/colors';
 import type { AptComplex, ScreenRank } from '@/data/types';
-import { formatSignalValue } from './ComplexList';
+import { formatSignalValue } from './ComplexList.helpers';
 import s from './ComplexMap.module.css';
 import {
   loadKakaoSdk,
@@ -317,7 +317,7 @@ export default function ComplexMap() {
         if (isMounted) {
           setKakao(sdk);
         }
-      } catch (err) {
+      } catch {
         // 타임아웃 또는 로드 실패
         if (isMounted) {
           setAptMapFailed(true);
@@ -408,6 +408,7 @@ export default function ComplexMap() {
       kakao.event.removeListener(mapInstance, 'idle', onIdle);
       ro.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kakao]);
 
   // ─────────────────── 오버레이 재구성 ─────────────────────
@@ -728,6 +729,9 @@ export default function ComplexMap() {
     kakao,
     aptScreen,
     aptComplexes,
+    // byId·rankById 는 위 두 값에서만 다시 만들어지므로 넣어도 재구성이 늘지 않는다
+    byId,
+    rankById,
     // level state 는 표시용(칩)일 뿐 — 재구성은 idle 이 올리는 viewportTick 하나로 트리거한다.
     // 둘 다 걸면 한 프레임 어긋난 이중 재구성이 생긴다.
     viewportTick,
@@ -856,7 +860,7 @@ export default function ComplexMap() {
       const apt = byId.get(r.id);
       return sum + (!apt || apt.lat == null ? 1 : 0);
     }, 0);
-  }, [aptScreen, aptComplexes]);
+  }, [aptScreen, aptComplexes, byId]);
 
   if (!kakao) {
     return null;

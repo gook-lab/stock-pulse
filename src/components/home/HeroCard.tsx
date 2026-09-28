@@ -26,7 +26,7 @@ export default function HeroCard() {
   const home = useStore(st => st.home);
   const mode = useStore(st => st.colorMode);
 
-  const series = home?.snapshotSeries ?? [];
+  const series = useMemo(() => home?.snapshotSeries ?? [], [home]);
   const path = useMemo(
     () =>
       sparkPath(

@@ -115,6 +115,7 @@ export default function Heatmap() {
 
   // 실시세 병합 — 미국은 Finnhub, KOSPI는 KIS(이름→코드).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 시장 전환 시 외부 시세 요청을 새로 시작하며 이전 시장 값을 비운다 — 채움은 비동기 응답
     setQuotes({});
     setFailed(false);
     setLiveSyms(null);
@@ -194,6 +195,7 @@ export default function Heatmap() {
 
   // 블록 크기: 실 시가총액(미국 Finnhub profile2 · 코스피 Daum). 목 weight는 폴백.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 시장 전환 시 외부 시세 요청을 새로 시작하며 이전 시장 값을 비운다 — 채움은 비동기 응답
     setWeights(null);
     const marketNodes = heatmap.filter(n => n.market === market);
     if (!marketNodes.length) return;

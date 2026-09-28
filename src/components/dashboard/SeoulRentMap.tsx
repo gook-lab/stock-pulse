@@ -436,7 +436,7 @@ function Quadrant({
   hover,
   setHover,
 }: {
-  stats: NonNullable<ReturnType<typeof useSeoulStats>>;
+  stats: SeoulStats;
   mode: 'global' | 'korea';
   hover: string | null;
   setHover: (n: string | null) => void;
@@ -537,28 +537,26 @@ function Quadrant({
 }
 
 // stats 타입 추론용 (Quadrant props 타입 지정)
-function useSeoulStats() {
-  return null as unknown as {
-    ds: SeoulDistrict[];
-    ranked: SeoulDistrict[];
-    max: SeoulDistrict;
-    min: SeoulDistrict;
-    topUp: SeoulDistrict;
-    topDown: SeoulDistrict;
-    upCount: number;
-    downCount: number;
-    totalCount: number;
-    hottest: SeoulDistrict;
-    median: number;
-    ratio: number;
-    minEok: number;
-    maxEok: number;
-    maxCount: number;
-    medianCount: number;
-    chgMin: number;
-    chgMax: number;
-  };
-}
+type SeoulStats = {
+  ds: SeoulDistrict[];
+  ranked: SeoulDistrict[];
+  max: SeoulDistrict;
+  min: SeoulDistrict;
+  topUp: SeoulDistrict;
+  topDown: SeoulDistrict;
+  upCount: number;
+  downCount: number;
+  totalCount: number;
+  hottest: SeoulDistrict;
+  median: number;
+  ratio: number;
+  minEok: number;
+  maxEok: number;
+  maxCount: number;
+  medianCount: number;
+  chgMin: number;
+  chgMax: number;
+};
 
 function Kpi({
   k,

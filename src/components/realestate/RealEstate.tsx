@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { Badge, Button, EmptyState, ErrorState } from '@/components/common';
 import { colors, WARN } from '@/lib/colors';
@@ -56,21 +56,22 @@ function useCollect() {
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const disposed = useRef(false);
 
-  const stop = () => {
+  // 타이머 ref 와 setter 만 쓰므로 참조가 안정적이다 — 마운트 effect 의존성에 넣어도 한 번만 돈다
+  const stop = useCallback(() => {
     if (timer.current) {
       clearInterval(timer.current);
       timer.current = null;
     }
-  };
+  }, []);
   useEffect(() => {
     disposed.current = false;
     return () => {
       disposed.current = true;
       stop();
     };
-  }, []);
+  }, [stop]);
 
-  const poll = () => {
+  const poll = useCallback(() => {
     stop();
     timer.current = setInterval(async () => {
       try {
@@ -97,7 +98,7 @@ function useCollect() {
         /* 서버 재시작 등 */
       }
     }, 2000);
-  };
+  }, [stop]);
 
   const start = async () => {
     if (running) return;
@@ -130,7 +131,7 @@ function useCollect() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [poll]);
 
   return { running, message, start };
 }
